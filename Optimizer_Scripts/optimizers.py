@@ -71,7 +71,7 @@ class NesterovMomentum:
         if (not self.initialized):
             self.initialize(x_state)
         #update parameters
-        self.v_k = self.gamma * self.v_k + self.learning * x_grad
+        self.v_k = self.gamma * self.v_k + self.learning_rate * x_grad
         self.x_state = x_state - self.v_k
         self.grad_helper = self.gamma * self.v_k
         return self.x_state

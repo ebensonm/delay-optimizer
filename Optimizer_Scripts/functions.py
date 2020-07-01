@@ -2,7 +2,7 @@ import numpy as np
 
 def ackley_gen(n):
     def ackley(x):
-        return -20 * np.exp(-0.2 * np.sqrt(1/n * np.sum(np.square(x)))) - np.exp(1/n*np.sum(np.cos(2*np.pi*x))) + 20 + np.exp(1)
+        return -20 * np.exp(-0.2 * np.sqrt((1/n) * np.sum(np.square(x)))) - np.exp((1/n)*np.sum(np.cos(2*np.pi*x))) + 20 + np.exp(1)
     return ackley
     
 def ackley_deriv_gen(n):
