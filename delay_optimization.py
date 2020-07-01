@@ -58,17 +58,16 @@ def use_ackley(n,max_L,num_delays):
     return delayer
                       
 if __name__ == "__main__":
-    n = 100
+    n = 1000
     #max_L = 10
     num_delays = 800
-    use_delays = False
+    use_delays = True
     object_list = list()
     for i in range(1,11):
         max_L = i * 10
         delayer = use_ackley(n,max_L,num_delays)
         object_list.append(delayer)
-        
-      
+         
     def multi_test(i,delayer):
         alpha, beta_1, beta_2 = adam_optimizer_optimizer(delayer, use_delays=use_delays)
         delayer.Optimizer.learning_rate = alpha
@@ -79,17 +78,10 @@ if __name__ == "__main__":
             dill.dump(delayer,inFile)      
         del delayer         
     processes = []
-    for i in range(0,10):
+    for i in range(0,8):
         p = mp.Process(target=multi_test,args=(i,object_list[i],))
         processes.append(p)
         p.start()
         
     for p in processes:
         p.join()
-        
-    #alpha, beta_1, beta_2 = adam_optimizer_optimizer(delayer,use_delays=use_delays)
-    #print(alpha,beta_1,beta_2)
-    #print(np.linalg.norm(delayer.final_state))
-    #print(delayer.final_val)
-    #print(delayer.conv)
-    #print(len(delayer.time_series))

@@ -64,6 +64,7 @@ class Delayer:
         conv_bool = False                                       #initialize the time series
         self.time_series = np.zeros((maxiter,self.n))           #initialize the convergence boolean
         self.num_max_delay = self.max_L                         #initialize number for max delay of iteration
+        self.Optimizer.initialize(self.x_init)
         for i in range(self.max_L+1):                           #add copies to the time series for delays
             self.time_series[i,:] = self.x_init
             iter_start = i + 1    
@@ -78,7 +79,7 @@ class Delayer:
             if (np.linalg.norm(self.time_series[i,:] - self.time_series[i-1,:]) < tol): #check convergences
                 conv_bool = True
                 break
-        self.Optimizer.initialized = False                     #reset the input optimizer
+        self.Optimizer.initialized = False                    #reset the input optimizer
         self.time_series = self.time_series[self.max_L:i+1,:] #remove copies and end zeros from time_series
         self.final_state = x_state_new                        #save the final state
         self.final_val = self.loss_function(self.final_state) #save the final loss value
