@@ -1,7 +1,9 @@
 import numpy as np
+import time
+
 class Delayer:
 
-    def __init__(self, n, optimizer, loss_function, grad, x_init, max_L, num_delays):
+    def __init__(self, n, optimizer, loss_function, grad, x_init, max_L=2, num_delays=None):
         """The initializer for the Delayer class
             
            Parameters - 
@@ -28,6 +30,11 @@ class Delayer:
         """
         del self.time_series
         
+    def add_copies(self):
+        """adds copies to the time series of the initial value to be used for getting delays at the beginning
+        """
+        self.time_series[0:self.max_L+1,:] = self.x_init
+        
     def use_delay(self,iter_val):
         """Called up by the compute_time_series method and adds the delay and computes the state/states to
            do computations on
@@ -37,6 +44,7 @@ class Delayer:
            returns - 
                x_state_new (ndarray, (n,)) - the next state after delayed computations
         """
+        start = time.time()
         if (iter_val < self.num_delays):                                 #check if we are still adding delays
             if (iter_val % (self.num_delays // self.max_L) == 0):        #shrink delays every interval
                 self.num_max_delay -= 1
@@ -44,11 +52,10 @@ class Delayer:
             x_state = self.time_series[D, self.list_n].reshape(self.n, self.n)      #use indexing to delay
             x_grad = np.diag(self.grad(x_state - self.Optimizer.grad_helper))       #get the gradient of the delays
             x_state = np.diag(x_state)                                              #get the state to update from
-            x_state_new = self.Optimizer(x_state, x_grad, iter_val)                 #update!     
+            x_state_new = self.Optimizer(x_state, x_grad, iter_val-self.max_L+1)                 #update!     
         else:       
             x_grad = self.grad(self.time_series[iter_val-1] - self.Optimizer.grad_helper)        
-            x_state_new = self.Optimizer(self.time_series[iter_val-1], x_grad, iter_val)  
-                               
+            x_state_new = self.Optimizer(self.time_series[iter_val-1], x_grad, iter_val-self.max_L+1)                    
         return x_state_new                                       #return the new state
       
     def compute_time_series(self, tol=1e-10, maxiter=5000, use_delays=False):
@@ -62,25 +69,23 @@ class Delayer:
                the state vector
         """
         conv_bool = False                                       #initialize the time series
-        self.time_series = np.zeros((maxiter,self.n))           #initialize the convergence boolean
+        self.time_series = np.zeros((maxiter+self.max_L,self.n)) #initialize the convergence boolean
         self.num_max_delay = self.max_L                         #initialize number for max delay of iteration
         self.Optimizer.initialize(self.x_init)
-        for i in range(self.max_L+1):                           #add copies to the time series for delays
-            self.time_series[i,:] = self.x_init
-            iter_start = i + 1    
-        for i in range(iter_start,maxiter):                     #start optimizer iterations
-            if (use_delays is True):                            #computation with delays
-                x_state_new = self.use_delay(iter_val = i)      #use_delay is used and returns the final state
+        self.add_copies()                 #add copies to the time series for the delay
+        for i in range(maxiter):          #start optimizer iterations         
+            if (use_delays is True):                                 #computation with delays
+                x_state_new = self.use_delay(iter_val = i+self.max_L)  #use_delay is used and returns the final
             else:                                               #computation without delays
-                x_grad = self.grad(self.time_series[i-1])
-                x_state_new = self.Optimizer(self.time_series[i-1], x_grad, i)
-                
-            self.time_series[i,:] = x_state_new                #add the updated values to the time series
-            if (np.linalg.norm(self.time_series[i,:] - self.time_series[i-1,:]) < tol): #check convergences
+                x_grad = self.grad(self.time_series[i-1+self.max_L])
+                x_state_new = self.Optimizer(self.time_series[i-1+self.max_L], x_grad, i+1)   
+            self.time_series[i+self.max_L,:] = x_state_new                #add the updated values to the time series
+            if (np.linalg.norm(self.time_series[i+self.max_L,:] - self.time_series[i-1+self.max_L,:]) < tol):
                 conv_bool = True
                 break
+                
         self.Optimizer.initialized = False                    #reset the input optimizer
-        self.time_series = self.time_series[self.max_L:i+1,:] #remove copies and end zeros from time_series
+        self.time_series = self.time_series[self.max_L:i+1+self.max_L,:] #remove copies and end zeros
         self.final_state = x_state_new                        #save the final state
         self.final_val = self.loss_function(self.final_state) #save the final loss value
         self.conv = conv_bool                                 #save convergence boolean

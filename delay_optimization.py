@@ -29,18 +29,18 @@ def use_ackley(n,max_L,num_delays,optimizer):
                       
 if __name__ == "__main__":
     n = 100
-    #max_L = 10
+    max_L = 1
     num_delays = 800
     use_delays = True
-    optimizer = Adam()
+    maxiter = 2000
+    optimizer = Momentum()
     object_list = list()
-    for i in range(1,11):
-        max_L = i * 10
-        delayer = use_ackley(n,max_L,num_delays,optimizer)
+    for i in range(0,1):
+        delayer = use_rast(n,max_L,num_delays,optimizer)
         object_list.append(delayer)
          
     def multi_test(i,delayer):
-        alpha, beta_1, beta_2 = momentum_optimizer_optimizer(delayer, use_delays=use_delays)
+        alpha, beta_1, beta_2 = momentum_optimizer_optimizer(delayer, use_delays=use_delays, maxiter=maxiter)
         delayer.Optimizer.learning_rate = alpha
         delayer.Optimizer.beta_1 = beta_1
         delayer.Optimizer.beta_2 = beta_2
@@ -49,7 +49,7 @@ if __name__ == "__main__":
             dill.dump(delayer,inFile)      
         del delayer         
     processes = []
-    for i in range(0,8):
+    for i in range(0,1):
         p = mp.Process(target=multi_test,args=(i,object_list[i],))
         processes.append(p)
         p.start()

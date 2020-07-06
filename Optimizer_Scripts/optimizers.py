@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 class Adam:
 
@@ -40,8 +41,8 @@ class Momentum:
     def initialize(self, x_init):
         self.n = len(x_init)
         self.x_state = x_init
-        self.v_k = np.zeros(self.n)
-        self.grad_helper = np.zeros(self.n)
+        self.v_k = np.zeros(self.n,dtype=int)
+        self.grad_helper = np.zeros(self.n,dtype=int)
         self.initialized = True
     
     def __call__(self, x_state, x_grad, iteration_num):

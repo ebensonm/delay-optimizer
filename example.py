@@ -8,16 +8,17 @@ from Optimizer_Scripts.Delayer import Delayer
 # - does the ackley function even work?              
                            
 if __name__ == "__main__":
-    n = 100                           #the number of dimensions of the state vector
+    n = 2                             #the number of dimensions of the state vector
     max_L = 1                         #the max delay that the system can have
-    num_delays = 1200                 #the number of delays before removing all delays
+    num_delays = 8500                 #the number of delays before removing all delays
+    max_iter = 10000
     x_init = np.random.uniform(-5.12,5.12,n)  #starting state values
     adam_optimizer = Adam()           #optimizer to add time delays to
     loss_function = rastrigin_gen(n)  #loss function
     deriv_loss = rast_deriv_gen(n)    #derivative of loss function
     #initialize the class with a call to Delayer, which adds the delays
     delayer = Delayer(n, adam_optimizer, loss_function, deriv_loss, x_init, max_L, num_delays)  
-    delayer.compute_time_series(use_delays=True) #computes the states over time 
+    delayer.compute_time_series(use_delays=True,maxiter=max_iter) #computes the states over time 
     print(np.linalg.norm(delayer.final_state))  #print the final state vector
     print(delayer.final_val)                    #print the final loss
     print(delayer.conv)                         #print whether or not it converged
