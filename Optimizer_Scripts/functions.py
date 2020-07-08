@@ -27,3 +27,6 @@ def rast_deriv_gen(n):
     def rast_grad(x,*args):
         return 2 * x + 20 * np.pi * np.sin(2*np.pi*x)        
     return rast_grad
+    
+def poly(x):
+    return np.sum(np.square(x))

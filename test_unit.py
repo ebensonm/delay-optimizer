@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from autograd import grad
 from autograd.misc.optimizers import adam
-from Optimizer_Scripts.functions import ackley_gen, rastrigin_gen, ackley_deriv_gen, rast_deriv_gen
+from Optimizer_Scripts.functions import ackley_gen, rastrigin_gen, ackley_deriv_gen, rast_deriv_gen, poly
 from Optimizer_Scripts.optimizers import Adam, Momentum, NesterovMomentum
 from Optimizer_Scripts.Delayer import Delayer
 
@@ -55,7 +55,7 @@ def test_derivatives():
 
 def test_adam_rast():
     #get the objective and gradient functions
-    n_list = [1,2,5,10,100,150,200]
+    n_list = [2,5,10,100,150,200]
     objective_list = [rastrigin_gen(n) for n in n_list]
     grad_objective_list = [grad(objective_list[i]) for i in range(len(objective_list))]
     #set the relavant hyperparameters
@@ -135,10 +135,45 @@ def test_adam_ackley():
             del my_opt
             del state_test
             
-###########################
-#to do - compute a simple delay added system and make sure that its answer correspond to the other answers
-#maybe do the comparision test using the other system?          
-#def test_delay():
-
-###########################
+def test_delay():
+    #simple 2-dimensional case with momentum delayed
+    
+    #declare the optimizer and initialize the Delayer
+    series_test = np.array([[16.,8.],[8.,4.],[4.,2.],[2.,-1.],[1.,-1.5]])
+    optimizer = Momentum(learning_rate=0.25,gamma=0.5)
+    objective = poly
+    my_opt = Delayer(n=2, x_init = np.array([16.,8.]), optimizer=optimizer, loss_function=objective, grad=grad(objective), max_L=4, num_delays=50)
+    my_opt.compute_time_series(use_delays=True, maxiter=4, random=False, D=np.array([4,3,2,1]))
+    assert np.allclose(series_test, my_opt.time_series), "Did not get correct time series on Momentum, wrong state is {}".format(my_opt.time_series)
+    assert np.allclose(np.array([1,-1.5]),my_opt.final_state), "Did not get final state on Momentum, wrong state is {}".format(my_opt.final_state)
+    
+    #simple 2-dimensional case with nesterov momentum delayed
+    series_test = np.array([[16.,8.],[8.,4.],[6.,3.],[5.5,0.75],[5.375,0.6875]])
+    optimizer = NesterovMomentum(learning_rate=0.25,gamma=0.5)
+    objective = poly
+    my_opt = Delayer(n=2, x_init = np.array([16.,8.]), optimizer=optimizer, loss_function=objective, grad=grad(objective), max_L=4, num_delays=50)
+    my_opt.compute_time_series(use_delays=True, maxiter=4, random=False, D=np.array([4,3,2,1]))
+    assert np.allclose(series_test,my_opt.time_series), "Did not get correct time series on NesterovMomentum, wrong state is {}".format(my_opt.time_series)
+    assert np.allclose(np.array([5.375,0.6875]),my_opt.final_state), "Did not get final state on NesterovMomentum, wrong state is {}".format(my_opt.final_state)
+    
+    #same as first test but different delays
+    #declare the optimizer and initialize the Delayer
+    series_test = np.array([[16.,8.],[8.,4.],[4.,2.],[-2.,-1.],[-3.,-1.5]])
+    optimizer = Momentum(learning_rate=0.25,gamma=0.5)
+    objective = poly
+    my_opt = Delayer(n=2, x_init = np.array([16.,8.]), optimizer=optimizer, loss_function=objective, grad=grad(objective), max_L=3, num_delays=50)
+    my_opt.compute_time_series(use_delays=True, maxiter=4, random=False, D=np.array([1,3,2,1]))
+    assert np.allclose(series_test, my_opt.time_series), "Did not get correct time series on Momentum 2, wrong state is {}".format(my_opt.time_series)
+    assert np.allclose(np.array([-3.,-1.5]),my_opt.final_state), "Did not get final state on Momentum 2, wrong state is {}".format(my_opt.final_state)
+    del my_opt
+    
+######################################
+#to do - more complicated derivative, dependent on other parts of the function
+ #make work for the other 3 problems easier to follow
+#def test_delay_2():
+###################################### 
+  
+    
+    
+    
     
