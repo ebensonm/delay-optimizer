@@ -89,8 +89,8 @@ def test_adam_rast():
             my_opt.compute_time_series(use_delays=False,maxiter=max_iter)
             state_mine = my_opt.final_state
             final_val = my_opt.final_val
-            assert np.allclose(state_test, state_mine,rtol=1e-4,atol=1e-4), "Adam rastrigin fail on initial value {} with {} dimensions".format(x_init,n)
-            assert np.allclose(final_val, val_test,rtol=1e-4,atol=1e-4), "Adam rastrigin fail on final evaluation computation"
+            assert np.allclose(state_test, state_mine), "Adam rastrigin fail on initial value {} with {} dimensions".format(x_init,n)
+            assert np.allclose(final_val, val_test), "Adam rastrigin fail on final evaluation computation"
             del my_opt
             del state_test
                        
@@ -181,24 +181,28 @@ def test_delay_2():
     del my_opt
 
 #write the final test for checking if the delays are then set to zero
-"""
 def test_delay_to_zero():
     x_init = np.random.uniform(-5.12,5.12,5) 
-    learning_rate = 0.001
-    beta_1 = 0.72
-    beta_2 = 0.84
-    epsilon = 1e-5
-    optimizer = Adam(learning_rate=learning_rate, epsilon=epsilon, beta_1=beta_1, beta_2=beta_2)
+    learning_rate = 0.02
+    gamma = 0.6
+    optimizer = Momentum(learning_rate=learning_rate, gamma=gamma)
     objective = rastrigin_gen(5)
     gradient = grad(objective)
-    my_opt = Delayer(n=5, x_init=x_init, optimizer=optimizer, loss_function=objective, grad=gradient, max_L=1, num_delays=10)
-    my_opt.compute_time_series(use_delays=True, maxiter=60, random=True)
-    print(len(my_opt.time_series))
-    print(my_opt.time_series)
+    my_opt = Delayer(n=5, x_init=x_init, optimizer=optimizer, loss_function=objective, grad=gradient, max_L=2, num_delays=10)
+    #run the optimizer the first time to get the right values
+    np.random.seed(15)
+    my_opt.compute_time_series(use_delays=True, maxiter=9, random=True)
     #get the right state to initialize the starting point of the adam optimizer tester
-    x_init_test = my_opt.time_series[10,:]    
-    state_test = adam(grad=gradient, x0=x_init_test, num_iters=40, step_size = learning_rate, b1=beta_1, b2 = beta_2, eps = epsilon)
+    x_init_test = my_opt.time_series[9,:]
+    optimizer.initialized=True
+    my_opt_test = Delayer(n=5, x_init=x_init_test, optimizer=optimizer, loss_function=objective, grad=gradient, max_L=2, num_delays=10)
+    my_opt_test.compute_time_series(use_delays=False, maxiter=91)
+    #now run the optimizer again
+    np.random.seed(15)
+    my_opt.compute_time_series(use_delays=True, maxiter=100, random=True)
+    #now get the states to compare 
+    state_test = my_opt_test.final_state
     state_mine = my_opt.final_state
-    assert np.allclose(state_test, state_mine), "Fail, my state is {}: and their state is {}".format(state_mine, state_test)
-"""    
+    my_opt.delete_time_series()
+    assert np.allclose(state_test, state_mine), "Fail, the delays state is {}: and the undelayed state is {}".format(state_mine, state_test)    
     

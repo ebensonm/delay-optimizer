@@ -35,7 +35,7 @@ class Delayer:
         """
         self.time_series[:self.max_L+1,:] = self.x_init
         
-    def use_delay(self,iter_val, random=True, D=None):
+    def use_delay(self, iter_val, random=True, D=None):
         """Called up by the compute_time_series method and adds the delay and computes the state/states to
            do computations on
            
@@ -44,7 +44,6 @@ class Delayer:
            returns - 
                x_state_new (ndarray, (n,)) - the next state after delayed computations
         """
-        start = time.time()
         if (iter_val < self.num_delays):                                 #check if we are still adding delays
             if (iter_val % (self.num_delays // self.max_L) == 0):        #shrink delays every interval
                 self.num_max_delay -= 1
@@ -58,7 +57,7 @@ class Delayer:
             self.x_state = x_state
             self.x_grad = x_grad
             x_state_new = self.Optimizer(x_state, x_grad, iter_val-self.max_L+1)                 #update!   
-        else:       
+        else:
             x_grad = self.grad(self.time_series[iter_val] - self.Optimizer.grad_helper)        
             x_state_new = self.Optimizer(self.time_series[iter_val], x_grad, iter_val-self.max_L+1)                    
         return x_state_new                                       #return the new state
@@ -76,14 +75,15 @@ class Delayer:
         conv_bool = False                                       #initialize the time series
         self.time_series = np.zeros((maxiter+self.max_L+1,self.n)) #initialize the convergence boolean
         self.num_max_delay = self.max_L                         #initialize number for max delay of iteration
-        self.Optimizer.initialize(self.x_init)
+        if (self.Optimizer.initialized is False):
+            self.Optimizer.initialize(self.x_init)
         self.add_copies()                 #add copies to the time series for the delay
         for i in range(maxiter):          #start optimizer iterations         
             if (use_delays is True):                                 #computation with delays
                 x_state_new = self.use_delay(iter_val = i+self.max_L, random=random, D=D)  #use_delay to get state
             else:                                               #computation without delays
                 x_grad = self.grad(self.time_series[i+self.max_L])
-                x_state_new = self.Optimizer(self.time_series[i+self.max_L], x_grad, i+1)   
+                x_state_new = self.Optimizer(self.time_series[i+self.max_L], x_grad, i+1)  
             self.time_series[i+1+self.max_L,:] = x_state_new            #add the updated values to the time series
             if (np.linalg.norm(self.time_series[i+1+self.max_L,:] - self.time_series[i+self.max_L,:]) < tol):
                 conv_bool = True
