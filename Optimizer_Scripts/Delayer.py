@@ -59,8 +59,8 @@ class Delayer:
             self.x_grad = x_grad
             x_state_new = self.Optimizer(x_state, x_grad, iter_val-self.max_L+1)                 #update!   
         else:       
-            x_grad = self.grad(self.time_series[iter_val-1] - self.Optimizer.grad_helper)        
-            x_state_new = self.Optimizer(self.time_series[iter_val-1], x_grad, iter_val-self.max_L+1)                    
+            x_grad = self.grad(self.time_series[iter_val] - self.Optimizer.grad_helper)        
+            x_state_new = self.Optimizer(self.time_series[iter_val], x_grad, iter_val-self.max_L+1)                    
         return x_state_new                                       #return the new state
       
     def compute_time_series(self, tol=1e-10, maxiter=5000, use_delays=False, random=True, D=None):

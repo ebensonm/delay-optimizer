@@ -30,3 +30,16 @@ def rast_deriv_gen(n):
     
 def poly(x):
     return np.sum(np.square(x))
+    
+def poly_1(x):
+    return np.square(x[0]) * x[1] + 2 * np.square(x[0]) * x[1]**2
+    
+def poly_1_grad(x):
+    m,n = np.shape(x)
+    grad_array = np.zeros((m,n))
+    for i in range(m):
+        x0 = x[i,:][0]
+        x1 = x[i,:][1]
+        grad_array[i,:] = np.array([2*x0*x1 + 4*x0*x1**2, x0**2 + 4*x0**2*x1])   
+        
+    return grad_array

@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from autograd import grad
 from autograd.misc.optimizers import adam
-from Optimizer_Scripts.functions import ackley_gen, rastrigin_gen, ackley_deriv_gen, rast_deriv_gen, poly
+from Optimizer_Scripts.functions import ackley_gen, rastrigin_gen, ackley_deriv_gen, rast_deriv_gen, poly, poly_1, poly_1_grad
 from Optimizer_Scripts.optimizers import Adam, Momentum, NesterovMomentum
 from Optimizer_Scripts.Delayer import Delayer
 
@@ -69,14 +69,14 @@ def test_adam_rast():
         n = n_list[i]
         grad_objective = grad_objective_list[i]
         for j in range(100):
-            if (i == 0):
+            if (j == 0):
                 x_init = np.zeros(n,dtype=float)
-            elif (i == 97):
+            elif (j == 97):
                 x_init = 5.12 * np.ones(n)
                 x_init[:len(x_init):2] = -5.12
-            elif (i == 98):
+            elif (j == 98):
                 x_init = 5.12 * np.ones(n)
-            elif (i == 99):
+            elif (j == 99):
                 x_init = -5.12 * np.ones(n)
             else:
                 x_init = np.random.uniform(-5.12,5.12,n)
@@ -110,14 +110,14 @@ def test_adam_ackley():
         n = n_list[i]
         grad_objective = grad_objective_list[i]
         for j in range(100):
-            if (i == 0):
+            if (j == 0):
                 x_init = 1e-18*np.ones(n,dtype=float)
-            elif (i == 97):
+            elif (j == 97):
                 x_init = 32. * np.ones(n)
                 x_init[:len(x_init):2] = -32.
-            elif (i == 98):
+            elif (j == 98):
                 x_init = 32. * np.ones(n)
-            elif (i == 99):
+            elif (j == 99):
                 x_init = -32 * np.ones(n)
             else:
                 x_init = np.random.uniform(-32.,32.,n)
@@ -167,13 +167,38 @@ def test_delay():
     assert np.allclose(np.array([-3.,-1.5]),my_opt.final_state), "Did not get final state on Momentum 2, wrong state is {}".format(my_opt.final_state)
     del my_opt
     
-######################################
-#to do - more complicated derivative, dependent on other parts of the function
- #make work for the other 3 problems easier to follow
-#def test_delay_2():
-###################################### 
-  
     
+def test_delay_2():
+    #more complicated 2-d case
     
-    
+    series_test = np.array([[2.,1.],[-1.,-4.],[-5/2,-13/2],[-7/4,29/4],[7/8,43/8]])
+    optimizer = Momentum(learning_rate=0.25,gamma=0.5)
+    objective = poly_1
+    my_opt = Delayer(n=2, x_init=np.array([2.,1.]), optimizer=optimizer, loss_function=objective, grad=poly_1_grad, max_L=3, num_delays=50)
+    my_opt.compute_time_series(use_delays=True, maxiter=4, random=False, D=np.array([1,3,2,1]))
+    assert np.allclose(series_test, my_opt.time_series), "Did not get correst time series on Momentum 3, wrong state is {}".format(my_opt.time_series)
+    assert np.allclose(np.array([7/8,43/8]), my_opt.final_state)
+    del my_opt
+
+#write the final test for checking if the delays are then set to zero
+"""
+def test_delay_to_zero():
+    x_init = np.random.uniform(-5.12,5.12,5) 
+    learning_rate = 0.001
+    beta_1 = 0.72
+    beta_2 = 0.84
+    epsilon = 1e-5
+    optimizer = Adam(learning_rate=learning_rate, epsilon=epsilon, beta_1=beta_1, beta_2=beta_2)
+    objective = rastrigin_gen(5)
+    gradient = grad(objective)
+    my_opt = Delayer(n=5, x_init=x_init, optimizer=optimizer, loss_function=objective, grad=gradient, max_L=1, num_delays=10)
+    my_opt.compute_time_series(use_delays=True, maxiter=60, random=True)
+    print(len(my_opt.time_series))
+    print(my_opt.time_series)
+    #get the right state to initialize the starting point of the adam optimizer tester
+    x_init_test = my_opt.time_series[10,:]    
+    state_test = adam(grad=gradient, x0=x_init_test, num_iters=40, step_size = learning_rate, b1=beta_1, b2 = beta_2, eps = epsilon)
+    state_mine = my_opt.final_state
+    assert np.allclose(state_test, state_mine), "Fail, my state is {}: and their state is {}".format(state_mine, state_test)
+"""    
     

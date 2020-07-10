@@ -20,8 +20,6 @@ class Adam:
         self.initialized = True
                
     def __call__(self, x_state, x_grad, iteration_num):
-        if (not self.initialized):
-            self.initialize(x_state)
         #update parameters
         self.m_t = self.beta_1 * self.m_t + (1-self.beta_1) * x_grad
         self.v_t = self.beta_2 * self.v_t + (1-self.beta_2) * np.power(x_grad,2)
@@ -46,8 +44,6 @@ class Momentum:
         self.initialized = True
     
     def __call__(self, x_state, x_grad, iteration_num):
-        if (not self.initialized):
-            self.initialize(x_state)
         #update parameters
         self.v_k = self.gamma * self.v_k + self.learning_rate * x_grad
         self.x_state = x_state - self.v_k
@@ -69,8 +65,6 @@ class NesterovMomentum:
         self.initialized = True
         
     def __call__(self, x_state, x_grad, iteration_num):
-        if (not self.initialized):
-            self.initialize(x_state)
         #update parameters
         self.v_k = self.gamma * self.v_k + self.learning_rate * x_grad
         self.x_state = x_state - self.v_k
