@@ -24,11 +24,12 @@ class Delayer:
         self.max_L = max_L
         self.list_n = np.tile(np.arange(0,self.n,1,dtype = int),self.n).flatten()
         self.num_delays = num_delays
+        self.time_series = list()
         
     def delete_time_series(self):
         """deletes the calculated time series of the compute_time_series method
         """
-        del self.time_series
+        self.time_series = list()
         
     def add_copies(self):
         """adds copies to the time series of the initial value to be used for getting delays at the beginning
