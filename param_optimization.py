@@ -25,7 +25,7 @@ def param_optimizer(args):
         #reset delayer values
         delayer.Optimizer.params = params
         if (COMM.rank == 0):
-            job_vals = np.random.uniform(range_vals[0],range_vals[1],(COMM.size,n))
+            job_vals = np.random.uniform(range_vals[0],range_vals[1],(2*COMM.size,n))
             job_vals = np.vsplit(job_vals, COMM.size)
         else:
             job_vals = None
@@ -48,14 +48,14 @@ def param_optimizer(args):
     return best, delayer
              
 if __name__ == "__main__":
-    n = 2
+    n = 1000
     max_L = 1
-    num_delays = 800
-    use_delays = False
-    maxiter = 2000
+    num_delays = 1000
+    use_delays = True
+    maxiter = 5000
     tol = 1e-5
-    optimizer_name = 'Nesterov Momentum'
-    loss_name = 'Ackley'
+    optimizer_name = 'Adam'
+    loss_name = 'Rastrigin'
     max_evals=1000
     #build the tester
     args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals)
@@ -67,8 +67,7 @@ if __name__ == "__main__":
         delayer.Optimizer.params = best_params
         print(delayer.Optimizer.params)
         print(delayer.Optimizer.name)
-        print(delayer.time_series)
-        with open('../results/tests_{}_{}_{}.pkl'.format(delayer.Optimizer.name, n, loss_name),'wb') as inFile:
+        with open('../results/delays/tests_{}_{}_{}.pkl'.format(delayer.Optimizer.name, n, loss_name),'wb') as inFile:
             dill.dump(delayer,inFile)      
         del delayer
             
