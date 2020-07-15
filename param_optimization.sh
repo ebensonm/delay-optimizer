@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#SBATCH --time=5:00:00   # walltime
+#SBATCH --time=3:00:00   # walltime
 #SBATCH --ntasks=50   # number of processor cores (i.e. tasks)
 #SBATCH --nodes=10  # number of nodes
-#SBATCH --mem-per-cpu=4096M   # memory per CPU core
-#SBATCH -J  "1000 Dimensional Test"   # job name
+#SBATCH --mem-per-cpu=1024M   # memory per CPU core
+#SBATCH -J  "100 Dim Ack Test"   # job name
 
 #add the right thing to the file path
 export PATH="$HOME/.local/bin:$PATH"

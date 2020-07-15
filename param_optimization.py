@@ -52,12 +52,12 @@ if __name__ == "__main__":
     n = 100
     max_L = 1
     num_delays = 1000
-    use_delays = True
+    use_delays = False
     symmetric_delays = True
     maxiter = 5000
     tol = 1e-5
     optimizer_name = 'Adam'
-    loss_name = 'Rastrigin'
+    loss_name = 'Ackley'
     max_evals=1000
     #build the tester
     args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays)
@@ -65,12 +65,13 @@ if __name__ == "__main__":
     for i in range(10):
         best_params, delayer = param_optimizer(args)
         COMM = MPI.COMM_WORLD
+        print(COMM.size)
         #save the results
         if (COMM.rank == 0): 
             delayer.Optimizer.params = best_params
             print(delayer.Optimizer.params)
             print(delayer.Optimizer.name)
-            with open('../results/delays_lr/sym_test_{}_{}_{}_{}.pkl'.format(i, delayer.Optimizer.name, n, loss_name),'wb') as inFile:
+            with open('../results/undelays_lr/test_{}_{}_{}_{}.pkl'.format(i, delayer.Optimizer.name, n, loss_name),'wb') as inFile:
                 dill.dump(delayer,inFile)      
             del delayer
             
