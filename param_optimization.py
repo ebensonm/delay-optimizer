@@ -70,7 +70,7 @@ if __name__ == "__main__":
             delayer.Optimizer.params = best_params
             print(delayer.Optimizer.params)
             print(delayer.Optimizer.name)
-            with open('../results/delays/test_{}_{}_{}_{}.pkl'.format(i, delayer.Optimizer.name, n, loss_name),'wb') as inFile:
+            with open('../results/delays/sym_test_{}_{}_{}_{}.pkl'.format(i, delayer.Optimizer.name, n, loss_name),'wb') as inFile:
                 dill.dump(delayer,inFile)      
             del delayer
             
