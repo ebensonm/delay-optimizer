@@ -24,7 +24,7 @@ def param_optimizer(args):
     def objective(params):
         COMM = MPI.COMM_WORLD
         #reset delayer values
-        delayer.Optimizer.params = params
+        delayer.Optimizer.params['learning_rate'] = params['learning_rate']
         if (COMM.rank == 0):
             job_vals = np.random.uniform(range_vals[0],range_vals[1],(2*COMM.size,n))
             job_vals = np.vsplit(job_vals, COMM.size)
@@ -70,7 +70,7 @@ if __name__ == "__main__":
             delayer.Optimizer.params = best_params
             print(delayer.Optimizer.params)
             print(delayer.Optimizer.name)
-            with open('../results/delays/sym_test_{}_{}_{}_{}.pkl'.format(i, delayer.Optimizer.name, n, loss_name),'wb') as inFile:
+            with open('../results/delays_lr/sym_test_{}_{}_{}_{}.pkl'.format(i, delayer.Optimizer.name, n, loss_name),'wb') as inFile:
                 dill.dump(delayer,inFile)      
             del delayer
             

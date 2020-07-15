@@ -4,6 +4,12 @@ from Optimizer_Scripts.Delayer import Delayer
 import numpy as np
 from hyperopt import hp, tpe, fmin, Trials
 
+#space_search = {
+#'learning_rate': hp.uniform('learning_rate', 0.0, 1.5),
+#'beta_1': hp.uniform('beta_1', 0.8, 1.0),
+#'beta_2': hp.uniform('beta_2', 0.8, 1.0)
+#}
+
 def use_adam(params, epsilon=1e-7):
     optimizer = Adam(params, epsilon=epsilon)
     return optimizer
@@ -24,18 +30,14 @@ def use_rast(n,max_L,num_delays,optimizer):
     if (optimizer.name == 'Adam'):
         space_search = {
         'learning_rate': hp.uniform('learning_rate', 0.0, 1.5),
-        'beta_1': hp.uniform('beta_1', 0.8, 1.0),
-        'beta_2': hp.uniform('beta_2', 0.8, 1.0)
         }
     elif (optimizer.name == 'Momentum'):
         space_search = {
         'learning_rate': hp.uniform('alpha', 0.0, 1.0),
-        'gamma': hp.uniform('gamma', 0.0, 1.0),
         }
     else:
         space_search = {
         'learning_rate': hp.uniform('alpha', 0.0, 1.0),
-        'gamma': hp.uniform('gamma', 0.0, 1.0),
         }
     
     delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays)
@@ -49,18 +51,14 @@ def use_ackley(n,max_L,num_delays,optimizer):
     if (optimizer.name == 'Adam'):
         space_search = {
         'learning_rate': hp.uniform('learning_rate', 0.0, 1.5),
-        'beta_1': hp.uniform('beta_1', 0.8, 1.0),
-        'beta_2': hp.uniform('beta_2', 0.8, 1.0)
         }
     elif (optimizer.name == 'Momentum'):
         space_search = {
         'learning_rate': hp.uniform('alpha', 0.0, 1.0),
-        'gamma': hp.uniform('gamma', 0.0, 1.0),
         }
     else:
         space_search = {
         'learning_rate': hp.uniform('alpha', 0.0, 1.0),
-        'gamma': hp.uniform('gamma', 0.0, 1.0),
         }
     
     delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays)
