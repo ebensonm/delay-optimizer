@@ -66,7 +66,7 @@ def use_ackley(n,max_L,num_delays,optimizer):
     delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays)
     return delayer, space_search, [-32.,32.]
     
-def test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals):
+def test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays):
      #first define the optimizer
      if (optimizer_name == 'Adam'):
          optimizer = use_adam(epsilon=1e-7, params={'learning_rate': 0.1, 'beta_1': 0.9, 'beta_2': 0.999})
@@ -80,4 +80,4 @@ def test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss
      elif (loss_name == 'Ackley'):
          delayer, space_search, range_vals = use_ackley(n, max_L, num_delays, optimizer)
      #now return all parameters in currect order
-     return {'delayer':delayer, 'space_search':space_search, 'use_delays':use_delays, 'maxiter':maxiter, 'tol':tol, 'range_vals':range_vals, 'max_evals':max_evals}
+     return {'delayer':delayer, 'space_search':space_search, 'use_delays':use_delays, 'maxiter':maxiter, 'tol':tol, 'range_vals':range_vals, 'max_evals':max_evals, 'symmetric_delays':symmetric_delays}

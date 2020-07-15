@@ -36,10 +36,10 @@ class Delayer:
         """
         self.time_series[:self.max_L+1,:] = self.x_init
         
-    def use_delay(self, iter_val, random=True, D=None):
+    def use_delay(self, iter_val, random=True, symmetric_delays=False, D=None):
         """Called up by the compute_time_series method and adds the delay and computes the state/states to
            do computations on
-           
+  
            Parameters - 
                iter_val (int) - the value of the iteration of compute_time_series
            returns - 
@@ -48,13 +48,21 @@ class Delayer:
         if (iter_val < self.num_delays):                                 #check if we are still adding delays
             if (iter_val % (self.num_delays // self.max_L) == 0):        #shrink delays every interval
                 self.num_max_delay -= 1
-            if (random is True):
-                D = iter_val - np.random.randint(0,self.num_max_delay+1,self.n**2)  #get list of random delays
+            if (symmetric_delays is False):
+                if (random is True):
+                    D = iter_val - np.random.randint(0,self.num_max_delay+1,self.n**2)  #get list of random delays
+                else:
+                    D = iter_val - D  
+                x_state = self.time_series[D, self.list_n].reshape(self.n, self.n)      #use indexing to delay
+                x_grad = np.diag(self.grad(x_state - self.Optimizer.grad_helper)) #get the gradient of the delays
+                x_state = np.diag(x_state)                                       #get the state to update from     
             else:
-                D = iter_val - D
-            x_state = self.time_series[D, self.list_n].reshape(self.n, self.n)      #use indexing to delay
-            x_grad = np.diag(self.grad(x_state - self.Optimizer.grad_helper))       #get the gradient of the delays
-            x_state = np.diag(x_state)                                              #get the state to update from
+                if (random is True):
+                    D = iter_val - np.random.randint(0, self.num_max_delay+1,self.n)
+                else:
+                    D = iter_val - D
+                x_state = self.time_series[D, self.list_n[:self.n]]               #use indexing to delay
+                x_grad = self.grad(x_state - self.Optimizer.grad_helper)       #get the gradient of the delays
             self.x_state = x_state
             self.x_grad = x_grad
             x_state_new = self.Optimizer(x_state, x_grad, iter_val-self.max_L+1)                 #update!   
@@ -63,7 +71,7 @@ class Delayer:
             x_state_new = self.Optimizer(self.time_series[iter_val], x_grad, iter_val-self.max_L+1)                    
         return x_state_new                                       #return the new state
       
-    def compute_time_series(self, tol=1e-10, maxiter=5000, use_delays=False, random=True, D=None):
+    def compute_time_series(self, tol=1e-10, maxiter=5000, use_delays=False, random=True, symmetric_delays=False, D=None):
         """computes the time series using the passed Optimizer from __init__, saves convergence
            and time_seris which is an array of the states
            
@@ -81,7 +89,7 @@ class Delayer:
         self.add_copies()                 #add copies to the time series for the delay
         for i in range(maxiter):          #start optimizer iterations         
             if (use_delays is True):                                 #computation with delays
-                x_state_new = self.use_delay(iter_val = i+self.max_L, random=random, D=D)  #use_delay to get state
+                x_state_new = self.use_delay(iter_val = i+self.max_L, random=random, D=D, symmetric_delays=symmetric_delays)  #use_delay to get state
             else:                                               #computation without delays
                 x_grad = self.grad(self.time_series[i+self.max_L])
                 x_state_new = self.Optimizer(self.time_series[i+self.max_L], x_grad, i+1)  

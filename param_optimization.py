@@ -13,9 +13,10 @@ def param_optimizer(args):
     range_vals = args['range_vals']
     max_evals = args['max_evals']
     space_search = args['space_search']
+    symmetric_delays = args['symmetric_delays']
     def test(delayer, x_init):
         delayer.x_init = x_init
-        delayer.compute_time_series(use_delays=use_delays, maxiter=maxiter, tol=tol)  
+        delayer.compute_time_series(use_delays=use_delays, maxiter=maxiter, tol=tol, symmetric_delays=symmetric_delays)  
         if (delayer.conv is True):
             return delayer.final_val
         else:
@@ -48,26 +49,28 @@ def param_optimizer(args):
     return best, delayer
              
 if __name__ == "__main__":
-    n = 1000
+    n = 100
     max_L = 1
     num_delays = 1000
     use_delays = True
+    symmetric_delays = True
     maxiter = 5000
     tol = 1e-5
     optimizer_name = 'Adam'
     loss_name = 'Rastrigin'
     max_evals=1000
     #build the tester
-    args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals)
+    args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays)
     #now choose which one to use
-    best_params, delayer = param_optimizer(args)
-    COMM = MPI.COMM_WORLD
-    #save the results
-    if (COMM.rank == 0): 
-        delayer.Optimizer.params = best_params
-        print(delayer.Optimizer.params)
-        print(delayer.Optimizer.name)
-        with open('../results/delays/tests_{}_{}_{}.pkl'.format(delayer.Optimizer.name, n, loss_name),'wb') as inFile:
-            dill.dump(delayer,inFile)      
-        del delayer
+    for i in range(10):
+        best_params, delayer = param_optimizer(args)
+        COMM = MPI.COMM_WORLD
+        #save the results
+        if (COMM.rank == 0): 
+            delayer.Optimizer.params = best_params
+            print(delayer.Optimizer.params)
+            print(delayer.Optimizer.name)
+            with open('../results/delays/test_{}_{}_{}_{}.pkl'.format(i, delayer.Optimizer.name, n, loss_name),'wb') as inFile:
+                dill.dump(delayer,inFile)      
+            del delayer
             
