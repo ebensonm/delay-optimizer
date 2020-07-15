@@ -49,29 +49,28 @@ def param_optimizer(args):
     return best, delayer
              
 if __name__ == "__main__":
-    n = 100
+    n = 2
     max_L = 1
     num_delays = 1000
-    use_delays = False
+    use_delays = True
     symmetric_delays = True
     maxiter = 5000
     tol = 1e-5
     optimizer_name = 'Adam'
-    loss_name = 'Ackley'
-    max_evals=1000
+    loss_name = 'Rastrigin'
+    max_evals=50
     #build the tester
     args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays)
     #now choose which one to use
     for i in range(10):
         best_params, delayer = param_optimizer(args)
         COMM = MPI.COMM_WORLD
-        print(COMM.size)
         #save the results
         if (COMM.rank == 0): 
-            delayer.Optimizer.params = best_params
+            delayer.Optimizer.params['learning_rate'] = best_params['learning_rate']
             print(delayer.Optimizer.params)
             print(delayer.Optimizer.name)
-            with open('../results/undelays_lr/test_{}_{}_{}_{}.pkl'.format(i, delayer.Optimizer.name, n, loss_name),'wb') as inFile:
+            with open('../results/{}/test_{}_{}_{}_{}_{}.pkl'.format(use_delays, symmetric_delays, optimizer_name, loss_name, delayer.n, i),'wb') as inFile:
                 dill.dump(delayer,inFile)      
             del delayer
             

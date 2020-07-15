@@ -33,11 +33,11 @@ def use_rast(n,max_L,num_delays,optimizer):
         }
     elif (optimizer.name == 'Momentum'):
         space_search = {
-        'learning_rate': hp.uniform('alpha', 0.0, 1.0),
+        'learning_rate': hp.uniform('learning_rate', 0.0, 1.0),
         }
     else:
         space_search = {
-        'learning_rate': hp.uniform('alpha', 0.0, 1.0),
+        'learning_rate': hp.uniform('learning_rate', 0.0, 1.0),
         }
     
     delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays)
@@ -54,11 +54,11 @@ def use_ackley(n,max_L,num_delays,optimizer):
         }
     elif (optimizer.name == 'Momentum'):
         space_search = {
-        'learning_rate': hp.uniform('alpha', 0.0, 1.0),
+        'learning_rate': hp.uniform('learning_rate', 0.0, 1.0),
         }
     else:
         space_search = {
-        'learning_rate': hp.uniform('alpha', 0.0, 1.0),
+        'learning_rate': hp.uniform('learning_rate', 0.0, 1.0),
         }
     
     delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays)
