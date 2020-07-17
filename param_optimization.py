@@ -49,16 +49,16 @@ def param_optimizer(args):
     return best, delayer
              
 if __name__ == "__main__":
-    n = 2
+    n = 100
     max_L = 1
     num_delays = 1000
     use_delays = True
-    symmetric_delays = True
+    symmetric_delays = False
     maxiter = 5000
     tol = 1e-5
     optimizer_name = 'Adam'
-    loss_name = 'Rastrigin'
-    max_evals=50
+    loss_name = 'Ackley'
+    max_evals=200
     #build the tester
     args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays)
     #now choose which one to use
