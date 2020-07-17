@@ -14,6 +14,31 @@ def param_optimizer(args):
     max_evals = args['max_evals']
     space_search = args['space_search']
     symmetric_delays = args['symmetric_delays']
+    constant_learning_rate = args['constant_learning_rate']
+    def gen_learning_rates(params):
+        learning_rates = np.zeros(maxiter)
+        max_alpha = params['max_learning_rate']
+        min_alpha = params['min_learning_rate']
+        step_size = params['step_size']
+        num_changes = maxiter // (2*step_size)
+        current_max = max_alpha
+        step_int = (current_max - min_alpha) / step_size
+        it_num = 0
+        while (it_num < maxiter):
+            if (it_num == 0):
+                learning_rates[it_num] = min_alpha
+            else:
+                learning_rates[it_num] = learning_rates[it_num-1] + step_int
+            it_num += 1
+            #check to update parameters for learning rate updates
+            if (it_num % step_size == 0):
+                if (it_num % (step_size*2) == 0):           
+                    curent_max = current_max/2
+                    step_int = (current_max - min_alpha) / step_size
+                else:
+                    step_int = -1*step_int 
+        return learning_rates
+        
     def test(delayer, x_init):
         delayer.x_init = x_init
         delayer.compute_time_series(use_delays=use_delays, maxiter=maxiter, tol=tol, symmetric_delays=symmetric_delays)  
@@ -24,9 +49,12 @@ def param_optimizer(args):
     def objective(params):
         COMM = MPI.COMM_WORLD
         #reset delayer values
-        delayer.Optimizer.params['learning_rate'] = params['learning_rate']
+        if (constant_learning_rate is True):
+            delayer.Optimizer.params['learning_rate'] = params['learning_rate'] * np.ones(maxiter)
+        else:
+            delayer.Optimizer.params['learning_rate'] = gen_learning_rates(params)
         if (COMM.rank == 0):
-            job_vals = np.random.uniform(range_vals[0],range_vals[1],(2*COMM.size,n))
+            job_vals = np.random.uniform(range_vals[0],range_vals[1],(COMM.size,n))
             job_vals = np.vsplit(job_vals, COMM.size)
         else:
             job_vals = None
@@ -43,34 +71,40 @@ def param_optimizer(args):
             final_val = None
         final_val = COMM.bcast(final_val)
         return final_val
-        
+            
     space_search = space_search
     best = fmin(fn = objective, space=space_search, algo=tpe.suggest, max_evals=max_evals)
+    search_options = np.arange(10,2500,10)
+    best['step_size'] = search_options[best['step_size']]
     return best, delayer
              
 if __name__ == "__main__":
     n = 100
     max_L = 1
     num_delays = 1000
-    use_delays = True
-    symmetric_delays = False
+    use_delays = False
+    symmetric_delays = True
     maxiter = 5000
     tol = 1e-5
     optimizer_name = 'Adam'
     loss_name = 'Ackley'
-    max_evals=200
+    max_evals=100
+    constant_learning_rate = False
     #build the tester
-    args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays)
+    args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays, constant_learning_rate)
     #now choose which one to use
-    for i in range(10):
+    for i in range(1):
         best_params, delayer = param_optimizer(args)
         COMM = MPI.COMM_WORLD
         #save the results
         if (COMM.rank == 0): 
-            delayer.Optimizer.params['learning_rate'] = best_params['learning_rate']
-            print(delayer.Optimizer.params)
+            if (constant_learning_rate is True):
+                delayer.Optimizer.learning_rate_bounds = best_params['learning_rate']
+            else:
+                delayer.Optimizer.learning_rate_bounds = best_params
+            print(delayer.Optimizer.learning_rate_bounds)
             print(delayer.Optimizer.name)
-            with open('../results/{}/test_{}_{}_{}_{}_{}.pkl'.format(use_delays, symmetric_delays, optimizer_name, loss_name, delayer.n, i),'wb') as inFile:
+            with open('../results/del_{}/lr_{}/test_sym{}_{}_{}_{}_{}.pkl'.format(use_delays, constant_learning_rate, symmetric_delays, optimizer_name, loss_name, delayer.n, i),'wb') as inFile:
                 dill.dump(delayer,inFile)      
             del delayer
             
