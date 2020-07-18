@@ -75,11 +75,12 @@ def param_optimizer(args):
     space_search = space_search
     best = fmin(fn = objective, space=space_search, algo=tpe.suggest, max_evals=max_evals)
     search_options = np.arange(10,2500,10)
-    best['step_size'] = search_options[best['step_size']]
+    if (constant_learning_rate is False):
+        best['step_size'] = search_options[best['step_size']]
     return best, delayer
              
 if __name__ == "__main__":
-    n = 100
+    n = 1000
     max_L = 1
     num_delays = 1000
     use_delays = False
@@ -87,13 +88,13 @@ if __name__ == "__main__":
     maxiter = 5000
     tol = 1e-5
     optimizer_name = 'Adam'
-    loss_name = 'Ackley'
-    max_evals=100
+    loss_name = 'Rastrigin'
+    max_evals=300
     constant_learning_rate = False
     #build the tester
     args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays, constant_learning_rate)
     #now choose which one to use
-    for i in range(1):
+    for i in range(10):
         best_params, delayer = param_optimizer(args)
         COMM = MPI.COMM_WORLD
         #save the results
