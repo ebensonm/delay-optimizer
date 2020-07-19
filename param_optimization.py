@@ -15,6 +15,7 @@ def param_optimizer(args):
     space_search = args['space_search']
     symmetric_delays = args['symmetric_delays']
     constant_learning_rate = args['constant_learning_rate']
+    early_stopping = args['early_stopping']
     def gen_learning_rates(params):
         learning_rates = np.zeros(maxiter)
         max_alpha = params['max_learning_rate']
@@ -42,10 +43,15 @@ def param_optimizer(args):
     def test(delayer, x_init):
         delayer.x_init = x_init
         delayer.compute_time_series(use_delays=use_delays, maxiter=maxiter, tol=tol, symmetric_delays=symmetric_delays)  
-        if (delayer.conv is True):
-            return delayer.final_val
+        if (early_stopping is False):
+            if (delayer.conv is True):
+                return delayer.final_val
+            else:
+                return 1000 * delayer.n
         else:
-            return 1000 * delayer.n           
+            #calculate the functional value of each state
+            values = [delayer.loss_function(delayer.time_series[i,:]) for i in range(len(delayer.time_series))]
+            return np.min(values)      
     def objective(params):
         COMM = MPI.COMM_WORLD
         #reset delayer values
@@ -80,10 +86,10 @@ def param_optimizer(args):
     return best, delayer
              
 if __name__ == "__main__":
-    n = 10000
+    n = 10
     max_L = 1
     num_delays = 1000
-    use_delays = True
+    use_delays = False
     symmetric_delays = True
     maxiter = 5000
     tol = 1e-5
@@ -91,10 +97,11 @@ if __name__ == "__main__":
     loss_name = 'Ackley'
     max_evals=300
     constant_learning_rate = True
+    early_stopping = True
     #build the tester
-    args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays, constant_learning_rate)
+    args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays, constant_learning_rate, early_stopping)
     #now choose which one to use
-    for i in range(10):
+    for i in range(1):
         best_params, delayer = param_optimizer(args)
         COMM = MPI.COMM_WORLD
         #save the results
