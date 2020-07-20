@@ -86,7 +86,7 @@ def param_optimizer(args):
     return best, delayer
              
 if __name__ == "__main__":
-    n = 10
+    n = 10000
     max_L = 1
     num_delays = 1000
     use_delays = False
@@ -96,12 +96,12 @@ if __name__ == "__main__":
     optimizer_name = 'Adam'
     loss_name = 'Ackley'
     max_evals=300
-    constant_learning_rate = True
+    constant_learning_rate = False
     early_stopping = True
     #build the tester
     args = test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays, constant_learning_rate, early_stopping)
     #now choose which one to use
-    for i in range(1):
+    for i in range(10):
         best_params, delayer = param_optimizer(args)
         COMM = MPI.COMM_WORLD
         #save the results
@@ -112,7 +112,7 @@ if __name__ == "__main__":
                 delayer.Optimizer.learning_rate_bounds = best_params
             print(delayer.Optimizer.learning_rate_bounds)
             print(delayer.Optimizer.name)
-            with open('../results/del_{}/lr_{}/test_sym{}_{}_{}_{}_{}.pkl'.format(use_delays, constant_learning_rate, symmetric_delays, optimizer_name, loss_name, delayer.n, i),'wb') as inFile:
+            with open('../results/del_{}/lr_{}/test_sym{}_{}_{}_{}_stop_{}_{}.pkl'.format(use_delays, constant_learning_rate, symmetric_delays, optimizer_name, loss_name, delayer.n, early_stopping, i),'wb') as inFile:
                 dill.dump(delayer,inFile)      
             del delayer
             

@@ -4,7 +4,7 @@
 #SBATCH --ntasks=50   # number of processor cores (i.e. tasks)
 #SBATCH --nodes=10  # number of nodes
 #SBATCH --mem-per-cpu=4000M   # memory per CPU core
-#SBATCH -J  "2A_del Test"   # job name
+#SBATCH -J  "2A_undel Test"   # job name
 
 #add the right thing to the file path
 export PATH="$HOME/.local/bin:$PATH"
