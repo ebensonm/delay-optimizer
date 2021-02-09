@@ -4,12 +4,6 @@ from Optimizer_Scripts.Delayer import Delayer
 import numpy as np
 from hyperopt import hp, tpe, fmin, Trials
 
-#space_search = {
-#'learning_rate': hp.uniform('learning_rate', 0.0, 1.5),
-#'beta_1': hp.uniform('beta_1', 0.8, 1.0),
-#'beta_2': hp.uniform('beta_2', 0.8, 1.0)
-#}
-
 def use_adam(params, epsilon=1e-7):
     optimizer = Adam(params, epsilon=epsilon)
     return optimizer

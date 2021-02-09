@@ -1,4 +1,10 @@
-from autograd import numpy as np
+import numpy as np
+
+
+def adaptive_function(grad, x_value, max_delay):
+    #get the new time delay value, for now, just take the max of the two values
+    time_del = max(int(np.ceil(1/np.linalg.norm(grad(x_value)))), max_delay)
+    return time_del
 
 def ackley_gen(n):
     def ackley(x,*args):  
@@ -17,13 +23,21 @@ def ackley_deriv_gen(n):
 
 def rastrigin_gen(n):
     def rastrigin(x,*args):
-        return 10 * n + np.sum(np.square(x) - 10 * np.cos(2*np.pi*x))
+        return 10 * n + np.sum(np.square(x) - 10 * np.cos(2*np.pi*x), axis=0)
     return rastrigin
 
 def rast_deriv_gen(n):
     def rast_grad(x,*args):
         return 2 * x + 20 * np.pi * np.sin(2*np.pi*x)        
     return rast_grad
+    
+def himmelblau(x, *args):
+    return np.square(np.square(x[0]) + x[1] - 11) + np.square(x[0] + np.square(x[1]) - 7)
+    
+def himmelblau_grad(x,*args):
+    one = 2*2*x[0]*(x[0]**2+x[1]-11) + 2*(x[0]+x[1]**2-7)
+    two = 2 * (x[0]**2+x[1]-11) + 2*2*x[1]*(x[0]+x[1]**2-7)
+    return np.array([one,two])
     
 def poly(x):
     return np.sum(np.square(x))

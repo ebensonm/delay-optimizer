@@ -1,6 +1,23 @@
 import numpy as np
 import time
 
+class GradientDescent:
+    
+    def __init__(self, params):
+        self.params = params
+        self.name = 'Gradient Descent'
+        self.initialized = False
+
+    def initialize(self, x_init):
+        self.n = len(x_init)
+        self.x_state = x_init
+        self.grad_helper = np.zeros(self.n) 
+        self.initialized=True
+        
+    def __call__(self, x_state, x_grad, iteration_num):
+        self.x_state = x_state - (self.params['learning_rate'][iteration_num - 1])*x_grad
+        return self.x_state
+      
 class Adam:
 
     def __init__(self, params, epsilon=1e-7):
