@@ -27,13 +27,13 @@ def use_rast(n,max_L,num_delays,optimizer, constant_learning_rate):
         }
     else:
         space_search = {
-        'max_learning_rate': hp.uniform('max_learning_rate', 1.0, 5.0),
-        'min_learning_rate': hp.uniform('min_learning_rate', 0.1, 1.0),
-        'step_size': hp.choice('step_size', np.arange(10,2500,10))
+        'max_learning_rate': hp.uniform('max_learning_rate', 0.5, 2.0),
+        'min_learning_rate': hp.uniform('min_learning_rate', 0.0, 1.0),
+        'step_size': hp.choice('step_size', np.arange(100,2500,100))
         }
     
     delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays)
-    return delayer, space_search, [-5.12,5.12]
+    return delayer, space_search, -5.12, 5.12
     
 def use_ackley(n,max_L,num_delays,optimizer,constant_learning_rate):
     np.random.seed(12)            
@@ -46,25 +46,29 @@ def use_ackley(n,max_L,num_delays,optimizer,constant_learning_rate):
         }
     else:
         space_search = {
-        'max_learning_rate': hp.uniform('max_learning_rate', 1.0, 5.0),
-        'min_learning_rate': hp.uniform('min_learning_rate', 0.1, 1.0),
-        'step_size': hp.choice('step_size', np.arange(10,2500,10))
+        'max_learning_rate': hp.uniform('max_learning_rate', 0.5, 2.0),
+        'min_learning_rate': hp.uniform('min_learning_rate', 0.0, 1.0),
+        'step_size': hp.choice('step_size', np.arange(100,2500,100))
         }
     delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays)
-    return delayer, space_search, [-32.,32.]
+    return delayer, space_search, -32., 32.
     
-def test_builder(n, max_L, num_delays, use_delays, maxiter, optimizer_name, loss_name, tol, max_evals, symmetric_delays, constant_learning_rate, early_stopping):
+def test_builder(args):
      #first define the optimizer
-     if (optimizer_name == 'Adam'):
-         optimizer = use_adam(epsilon=1e-7, params={'learning_rate': 0.1*np.ones(maxiter), 'beta_1': 0.9, 'beta_2': 0.999})
-     elif (optimizer_name == 'Momentum'):
-         optimizer = use_momentum(params={'gamma':0.6, 'learning_rate':0.1*np.ones(maxiter)}, constant_learning_rate=constant_learning_rate)
+     n = args['dim']
+     max_L = args['max_L']
+     num_delays = args['num_delays']
+     constant_learning_rate = args['constant_learning_rate']
+     if (args['optimizer_name'] == 'Adam'):
+         optimizer = use_adam(epsilon=1e-7, params={'learning_rate': 0.1, 'beta_1': 0.9, 'beta_2': 0.999})
+     elif (args['optimizer_name'] == 'Momentum'):
+         optimizer = use_momentum(params={'gamma':0.6, 'learning_rate':0.1}, constant_learning_rate=constant_learning_rate)
      else:
-         optimizer = use_nesterov(params={'gamma':0.6, 'learning_rate':0.1*np.ones(maxiter)}) 
+         optimizer = use_nesterov(params={'gamma':0.6, 'learning_rate':0.1}) 
      #now define the loss function
-     if (loss_name == 'Rastrigin'):
-         delayer, space_search, range_vals=use_rast(n, max_L, num_delays, optimizer, constant_learning_rate)
-     elif (loss_name == 'Ackley'):
-         delayer, space_search, range_vals=use_ackley(n, max_L, num_delays, optimizer, constant_learning_rate)
-     #now return all parameters in currect order
-     return {'delayer':delayer, 'space_search':space_search, 'use_delays':use_delays, 'maxiter':maxiter, 'tol':tol, 'range_vals':range_vals, 'max_evals':max_evals, 'symmetric_delays':symmetric_delays, 'constant_learning_rate': constant_learning_rate, 'early_stopping':early_stopping}
+     if (args['loss_name'] == 'Rastrigin'):
+         args['delayer'], args['space_search'], args['min_val'], args['max_val']=use_rast(n, max_L, num_delays, optimizer, constant_learning_rate)
+     elif (args['loss_name'] == 'Ackley'):
+         args['delayer'], args['space_search'], args['min_val'], args['max_val']=use_ackley(n, max_L, num_delays, optimizer, constant_learning_rate)
+     #now return all the needed parameters as a dictionary
+     return args
