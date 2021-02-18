@@ -3,7 +3,6 @@ from hyperopt import hp, tpe, fmin, Trials
 from mpi4py import MPI
 from Optimizer_Scripts.param_optimizer_helper import test_builder
 from Optimizer_Scripts.arguments import get_arguments
-import dill
 import copy
 from functools import partial
 import json

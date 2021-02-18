@@ -99,7 +99,7 @@ def get_arguments(raw_args=None):
     )
     parser.add_argument('--num_test_initials',
                         '-y',
-                        help=("Number of total initial values to test on per cpu"),
+                        help=("Number of total initial values to test per cpu"),
                         type=int, 
                         default=20
     )

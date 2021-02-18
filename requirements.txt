@@ -1,8 +1,4 @@
 numpy
 hyperopt
-copy
-json
 mpi4py
-time
 argparse
-functools
