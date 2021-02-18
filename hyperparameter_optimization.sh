@@ -20,4 +20,4 @@ mpirun python -u hyperparameter_optimization.py --dim 2 \
 --num_tests 1 --filename "Delayed_2d" --num_test_initials 10
 
 #close and delete the environment
-deactivate
+conda deactivate
