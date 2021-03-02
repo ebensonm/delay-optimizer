@@ -20,6 +20,7 @@ def main(**args):
             arg_dict['best_params'] = best_params
             arg_dict['best_params']['step_size'] = int(arg_dict['best_params']['step_size'])
             arg_dict['best_params']['best_loss'] = best_loss
+            arg_dict['Num_Initial_Values'] = COMM.size*arg_dict['num_test_initials']
             del arg_dict['delayer']
             del arg_dict['space_search']
             print(arg_dict['best_params'])
