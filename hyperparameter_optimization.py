@@ -9,8 +9,10 @@ import json
 
 def main(**args):
     optimizer_arguments = test_builder(args)
+    global final_sum
     for i in range(args['num_tests']):
-        best_params, best_loss = parameter_optimizer(optimizer_arguments)
+        final_sum = list()
+        best_params, best_loss, arg_min = parameter_optimizer(optimizer_arguments)
         #start the parallel hyperoptimization
         COMM = MPI.COMM_WORLD
         #remove the delays
@@ -20,6 +22,7 @@ def main(**args):
             arg_dict['best_params'] = best_params
             arg_dict['best_params']['step_size'] = int(arg_dict['best_params']['step_size'])
             arg_dict['best_params']['best_loss'] = best_loss
+            arg_dict['percent_converge'] = final_sum[arg_min]
             arg_dict['Num_Initial_Values'] = COMM.size*arg_dict['num_test_initials']
             del arg_dict['delayer']
             del arg_dict['space_search']
@@ -35,14 +38,15 @@ def parameter_optimizer(args):
     #remove this if we get memory errors (saves the trials to return best loss value as well
     trials = Trials()
     best = fmin(fn = objective, space=space_search, algo=tpe.suggest, max_evals=args['max_evals'],trials=trials)
-    best_loss = min(trials.losses())
+    arg_min = np.argmin(trials.losses())
+    best_loss = trials.losses()[arg_min]
     #delete to save space
     del trials
     search_options = np.arange(100,2500,100)
     #handle the case without a constant learning rate
     if (args['constant_learning_rate'] is False):
         best['step_size'] = search_options[best['step_size']]
-    return best, best_loss 
+    return best, best_loss, arg_min 
     
 def initial_points_test(args,params):
     COMM = MPI.COMM_WORLD
@@ -60,19 +64,27 @@ def initial_points_test(args,params):
     #scatter across available workers
     job_vals = COMM.scatter(job_vals,root=0)
     #initialize list to store the otpimal values
-    optimal_values = []    
+    optimal_values = []
+    total_conv = []
     for job in job_vals:
-        optimal_value = run_test(delayer=copy.deepcopy(delayer),x_init=job,args=args,params=params)
+        optimal_value,value = run_test(delayer=copy.deepcopy(delayer),x_init=job,args=args,params=params)
         optimal_values.append(optimal_value)
+        total_conv.append(value)
     #now gather the results
     optimal_values = COMM.gather(optimal_values, root=0)
+    total_conv = COMM.gather(total_conv, root=0)
     if (COMM.rank == 0):
         #take the average of the tests and return the value
         final_result  = np.mean(np.asarray([_opt_val for temp in optimal_values for _opt_val in temp]))
+        final_sum0 = np.sum(np.asarray([val for temp in total_conv for val in temp]))
+        final_sum0 = final_sum0/(COMM.size*args['num_test_initials'])
     else:
         final_result = None
+        final_sum0 = None
     final_result = COMM.bcast(final_result)
-    return final_result
+    final_sum0 = COMM.bcast(final_sum0)
+    final_sum.append(final_sum0)
+    return final_result*(2-final_sum0)
  
 def run_test(delayer,x_init,args,params):
     delayer.Optimizer.params['learning_rate'] = generate_learning_rates(args['constant_learning_rate'], params)
@@ -81,12 +93,11 @@ def run_test(delayer,x_init,args,params):
                                 symmetric_delays=args['symmetric_delays'],save_time_series=False)
     #delete the computed time series to save space
     delayer.delete_time_series()
-    #get the final functional value of the loss function
+    value = 0
     if (delayer.conv is True):
-        return delayer.final_val
-    else:
-        #return arbitrarily large value if it fails
-        return 1000 * delayer.n
+        value = 1
+    #get the final functional value of the loss function
+    return delayer.final_val, value
         
 def const_lr_gen(params):
     GO = True
