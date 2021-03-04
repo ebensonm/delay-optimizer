@@ -28,8 +28,8 @@ def use_rast(n,max_L,num_delays,optimizer, constant_learning_rate,logging):
         }
     else:
         space_search = {
-        'max_learning_rate': hp.uniform('max_learning_rate', 0.5, 3.0),
-        'min_learning_rate': hp.uniform('min_learning_rate', 0.0, 1.5),
+        'max_learning_rate': hp.uniform('max_learning_rate', 1.5, 4.0),
+        'min_learning_rate': hp.uniform('min_learning_rate', 0.0, 1.0),
         'step_size': hp.choice('step_size', np.arange(100,2500,100))
         }
     
@@ -47,8 +47,8 @@ def use_ackley(n,max_L,num_delays,optimizer,constant_learning_rate,logging):
         }
     else:
         space_search = {
-        'max_learning_rate': hp.uniform('max_learning_rate', 1.5, 3.0),
-        'min_learning_rate': hp.uniform('min_learning_rate', 0.0, 0.8),
+        'max_learning_rate': hp.uniform('max_learning_rate', 1.5, 4.0),
+        'min_learning_rate': hp.uniform('min_learning_rate', 0.0, 1.0),
         'step_size': hp.choice('step_size', np.arange(100,2500,100))
         }
     delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays)

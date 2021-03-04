@@ -1,25 +1,26 @@
 {
-    "dim": 1000,
+    "dim": 10000,
     "max_L": 1,
     "num_delays": 1000,
     "use_delays": true,
-    "maxiter": 3000,
+    "maxiter": 2500,
     "optimizer_name": "Adam",
     "loss_name": "Rastrigin",
     "tol": 1e-05,
-    "max_evals": 350,
+    "max_evals": 1000,
     "symmetric_delays": true,
     "constant_learning_rate": false,
     "num_tests": 1,
-    "filename": "Delayed_Rast_1000d",
+    "filename": "Delayed_Rast_10000d",
     "num_test_initials": 5,
     "min_val": -5.12,
     "max_val": 5.12,
     "best_params": {
-        "max_learning_rate": 2.658576869643567,
-        "min_learning_rate": 0.37150314243901755,
-        "step_size": 400,
-        "best_loss": 2747.2501748145055
+        "max_learning_rate": 1.6306850038185758,
+        "min_learning_rate": 0.6915482417137785,
+        "step_size": 2400,
+        "best_loss": 41303.65728784905
     },
+    "percent_converge": 0.924,
     "Num_Initial_Values": 250
 }
