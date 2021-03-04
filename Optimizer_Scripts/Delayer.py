@@ -3,7 +3,7 @@ import time
 
 class Delayer:
 
-    def __init__(self, n, optimizer, loss_function, grad, x_init, max_L=2, num_delays=None):
+    def __init__(self, n, optimizer, loss_function, grad, x_init, max_L=2, num_delays=None, logging=False):
         """The initializer for the Delayer class
             
            Parameters - 
@@ -25,6 +25,9 @@ class Delayer:
         self.list_n = np.tile(np.arange(0,self.n,1,dtype = int),self.n).flatten()
         self.num_delays = num_delays
         self.time_series = list()
+        self.logging = logging
+        if (logging is True):
+            self.loss_list = list()
         
     def delete_time_series(self):
         """deletes the calculated time series of the compute_time_series method
@@ -62,12 +65,18 @@ class Delayer:
                 else:
                     D = index_val - D
                 x_state = self.time_series[D, self.list_n[:self.n]]               #use indexing to delay
-                x_grad = self.grad(x_state - self.Optimizer.grad_helper)       #get the gradient of the delays
-            self.x_state = x_state
-            self.x_grad = x_grad
+                value = x_state - self.Optimizer.grad_helper
+                x_grad = self.grad(value)       #get the gradient of the delays
+            #handle the exception case in the combustion problem
+            if (x_grad is None):
+                return None
             x_state_new = self.Optimizer(x_state, x_grad, iter_val)                 #update!   
         else:
-            x_grad = self.grad(self.time_series[index_val] - self.Optimizer.grad_helper)        
+            value = self.time_series[index_val] - self.Optimizer.grad_helper
+            x_grad = self.grad(self.time_series[index_val] - self.Optimizer.grad_helper)  
+            #handle the exception case in the combustion problem
+            if (x_grad is None):
+                return None      
             x_state_new = self.Optimizer(self.time_series[index_val], x_grad, iter_val)                    
         return x_state_new                                       #return the new state
         
@@ -111,13 +120,28 @@ class Delayer:
         self.add_copies()                 #add copies to the time series for the delay
         for i in range(maxiter):          #start optimizer iterations      
             index_val = self.compute_index_val(save_time_series,i)       #compute the index selection value
-            if (use_delays is True):                                 #computation with delays
-                x_state_new = self.use_delay(index_val = index_val, random=random, D=D, symmetric_delays=symmetric_delays, shrink=shrink, iter_val=i+1)  #use_delay to get state
-            else:                                               #computation without delays
-                x_grad = self.grad(self.time_series[index_val])
-                x_state_new = self.Optimizer(self.time_series[index_val], x_grad, i+1)  
+            if (use_delays is True):
+                new_value = self.use_delay(index_val = index_val, random=random, 
+                                           D=D, symmetric_delays=symmetric_delays, 
+                                           shrink=shrink, iter_val=i+1)  #use_delay to get state
+                if (new_value is None):
+                    break
+                x_state_new = new_value
+            else:            
+                value = self.time_series[index_val]    #computation without delays
+                x_grad = self.grad(value)
+                #handle the exception case in the gradient problem
+                if (x_grad is None):
+                    break
+                x_state_new = self.Optimizer(self.time_series[index_val], x_grad, i+1)  #compute the update step
             x_state_old = self.add_new_state(save_time_series, x_state_new,i) #add the state to the time series
-            if (np.linalg.norm(x_state_new - x_state_old) < tol):
+            comp_val = np.linalg.norm(x_state_new - x_state_old)
+            #track losses over time (temporal complexity dependent on computation cost of functional value)
+            if self.logging is True:
+                loss_val = self.loss_function(x_state_new)
+                self.loss_list.append(loss_val)
+                print("Iteration: {}, Loss: {}, Distance from Previous State: {}".format(i, loss_val, comp_val))
+            if (comp_val < tol):
                 conv_bool = True
                 break
         #save algorithm variables        

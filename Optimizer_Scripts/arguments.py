@@ -103,6 +103,24 @@ def get_arguments(raw_args=None):
                         type=int, 
                         default=20
     )
+    parser.add_argument('--logging',
+                        '-g',
+                        help=("Whether or not optimizer will print steps in the optimization process"),
+                        type=str2bool,
+                        default=False
+    )
+    parser.add_argument('--vary_percent',
+                        '-v',
+                        help=("Argument for varying initil value from minimizer in combustion problem"),
+                        type=float,
+                        default=0.1
+    )
+    parser.add_argument('--hyper_minimize',
+                        '-x',
+                        help=("Which value to minimize with hyperparameter optimization"),
+                        choices=["loss", "distance"],
+                        default="loss"
+    )
     
     args = parser.parse_args(raw_args)
     return args

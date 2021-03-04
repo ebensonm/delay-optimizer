@@ -6,13 +6,16 @@ from Optimizer_Scripts.arguments import get_arguments
 import copy
 from functools import partial
 import json
+import time
 
 def main(**args):
     optimizer_arguments = test_builder(args)
     global final_sum
     for i in range(args['num_tests']):
         final_sum = list()
+        start = time.time()
         best_params, best_loss, arg_min = parameter_optimizer(optimizer_arguments)
+        end = time.time()
         #start the parallel hyperoptimization
         COMM = MPI.COMM_WORLD
         #remove the delays
@@ -20,13 +23,14 @@ def main(**args):
             #write the code for creating the argument dictionary
             arg_dict  = args.copy()
             arg_dict['best_params'] = best_params
+            arg_dict['test_time'] = np.round(end-start,3)
             arg_dict['best_params']['step_size'] = int(arg_dict['best_params']['step_size'])
             arg_dict['best_params']['best_loss'] = best_loss
             arg_dict['percent_converge'] = final_sum[arg_min]
             arg_dict['Num_Initial_Values'] = COMM.size*arg_dict['num_test_initials']
-            del arg_dict['delayer']
-            del arg_dict['space_search']
-            print(arg_dict['best_params'])
+            if (arg_dict['loss_name']=='Combustion'):
+                del arg_dict['minimizer']
+            del arg_dict['delayer'], arg_dict['space_search']
             #save the resulting dictionary as a json file
             with open(arg_dict['filename']+'{}.json'.format(i), 'w') as fp:
                 json.dump(arg_dict, fp, indent=4)            
@@ -42,11 +46,19 @@ def parameter_optimizer(args):
     best_loss = trials.losses()[arg_min]
     #delete to save space
     del trials
-    search_options = np.arange(100,2500,100)
+    #find the optimal hyperparameters from the space searched
+    if (args['loss_name']=='Combustion'):
+        search_options = np.arange(10,500,10)
+    else:
+        search_options = np.arange(100,2500,100)
     #handle the case without a constant learning rate
     if (args['constant_learning_rate'] is False):
         best['step_size'] = search_options[best['step_size']]
     return best, best_loss, arg_min 
+    
+def get_chunks(lis,num):
+    for i in range(0,len(lis),num):
+        yield lis[i:i+num]
     
 def initial_points_test(args,params):
     COMM = MPI.COMM_WORLD
@@ -54,10 +66,15 @@ def initial_points_test(args,params):
     #reset the learning values in the optimizer
     if (COMM.rank == 0):
         #get the initial values
-        #add argument for specifying the number of test matrices (maybe?)
-        job_vals = np.random.uniform(args['min_val'], args['max_val'], 
+        if (args['loss_name']=='Rastrigin' or args['loss_name']=='Ackley'):
+            job_vals = np.random.uniform(args['min_val'], args['max_val'], 
                                     (COMM.size*args['num_test_initials'],args['dim']))
-        #split so we can run this process in parallel
+            #split so we can run this process in parallel
+        elif (args['loss_name']=='Combustion'):
+            minimizer = args['minimizer']
+            job_vals = 1.0 + np.random.uniform(-args['vary_percent'],args['vary_percent'],
+                                         (COMM.size*args['num_test_initials'],args['dim']))
+            job_vals = job_vals * minimizer
         job_vals = np.vsplit(job_vals, COMM.size)
     else:
         job_vals = None
@@ -67,10 +84,11 @@ def initial_points_test(args,params):
     optimal_values = []
     total_conv = []
     for job in job_vals:
-        optimal_value,value = run_test(delayer=copy.deepcopy(delayer),x_init=job,args=args,params=params)
+        optimal_value, value = run_test(delayer=copy.deepcopy(delayer),x_init=job,args=args,params=params)
         optimal_values.append(optimal_value)
         total_conv.append(value)
     #now gather the results
+    COMM.barrier()
     optimal_values = COMM.gather(optimal_values, root=0)
     total_conv = COMM.gather(total_conv, root=0)
     if (COMM.rank == 0):
@@ -97,7 +115,12 @@ def run_test(delayer,x_init,args,params):
     if (delayer.conv is True):
         value = 1
     #get the final functional value of the loss function
-    return delayer.final_val, value
+    loss_val = delayer.final_val
+    #if we are minimizing distance compute the distance
+    if (args['hyper_minimize']=='distance'):
+       loss_val = np.linalg.norm(args['minimizer']-delayer.final_state)
+       
+    return loss_val, value
         
 def const_lr_gen(params):
     GO = True

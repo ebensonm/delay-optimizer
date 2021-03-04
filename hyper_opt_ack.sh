@@ -12,7 +12,7 @@ module load miniconda3/4.6
 module load mpi/openmpi-1.10.7_gnu4.8.5
 source activate HyperOpt
 
-#now run the script with the appropriate arguments
+
 mpirun python -u hyperparameter_optimization.py --dim 2 \
 --max_L 1 --num_delays 1000 --use_delays True --maxiter 2000 \
 --optimizer_name "Adam" --loss_name "Ackley" --tol 1e-5 \
