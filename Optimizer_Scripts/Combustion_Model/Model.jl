@@ -1,4 +1,4 @@
-#module CombustionModel
+module CombustionModel
 
 import Models
 using ParametricModels
@@ -386,4 +386,4 @@ function gradient(x)
     return model.jacobian(x)' * model.r(x)
 end
 
-#end # module
+end #module

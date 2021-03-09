@@ -118,6 +118,7 @@ class Delayer:
         if (self.Optimizer.initialized is False):
             self.Optimizer.initialize(self.x_init)
         self.add_copies()                 #add copies to the time series for the delay
+        x_state_new = self.x_init         #initialize new state array/matrix
         for i in range(maxiter):          #start optimizer iterations      
             index_val = self.compute_index_val(save_time_series,i)       #compute the index selection value
             if (use_delays is True):

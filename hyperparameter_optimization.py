@@ -1,3 +1,5 @@
+from julia.api import Julia
+jl = Julia(compiled_modules=False)
 import numpy as np
 from hyperopt import hp, tpe, fmin, Trials
 from mpi4py import MPI
@@ -116,10 +118,11 @@ def run_test(delayer,x_init,args,params):
         value = 1
     #get the final functional value of the loss function
     loss_val = delayer.final_val
+    if (loss_val is None):
+        loss_val = args['dim']*10000
     #if we are minimizing distance compute the distance
     if (args['hyper_minimize']=='distance'):
-       loss_val = np.linalg.norm(args['minimizer']-delayer.final_state)
-       
+       loss_val = np.linalg.norm(args['minimizer']-delayer.final_state) 
     return loss_val, value
         
 def const_lr_gen(params):

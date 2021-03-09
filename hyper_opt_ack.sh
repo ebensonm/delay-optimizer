@@ -16,7 +16,7 @@ source activate HyperOpt
 mpirun python -u hyperparameter_optimization.py --dim 2 \
 --max_L 1 --num_delays 1000 --use_delays True --maxiter 2000 \
 --optimizer_name "Adam" --loss_name "Ackley" --tol 1e-5 \
---max_evals 1000 --symmetric_delays True --constant_learning_rate False \
+--max_evals 10 --symmetric_delays True --constant_learning_rate False \
 --num_tests 1 --filename "Delayed_Ack_2d" --num_test_initials 5
 
 #now run the script with the appropriate arguments
