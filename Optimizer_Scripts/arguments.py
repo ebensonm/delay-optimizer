@@ -103,7 +103,7 @@ def get_arguments(raw_args=None):
                         type=int, 
                         default=20
     )
-    parser.add_argument('--logging',
+    parser.add_argument('--print_log',
                         '-g',
                         help=("Whether or not optimizer will print steps in the optimization process"),
                         type=str2bool,
