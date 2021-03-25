@@ -64,7 +64,7 @@ def use_combustion(n,max_L,num_delays,optimizer,constant_learning_rate,vary_perc
         }
     else:
         space_search = {
-        'max_learning_rate': hp.uniform('max_learning_rate', 0.0, 3.0),
+        'max_learning_rate': hp.uniform('max_learning_rate', 1.0, 3.0),
         'min_learning_rate': hp.uniform('min_learning_rate', 0.0, 1.0),
         'step_size': hp.choice('step_size', np.arange(10,500,10))
         }
