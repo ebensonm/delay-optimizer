@@ -3,7 +3,8 @@ import time
 
 class Delayer:
 
-    def __init__(self, n, optimizer, loss_function, grad, x_init, max_L=2, num_delays=None, logging=False):
+    def __init__(self, n, optimizer, loss_function, grad, x_init, max_L=2, 
+                 num_delays=None, logging=False, print_log=False):
         """The initializer for the Delayer class
             
            Parameters - 
@@ -26,13 +27,16 @@ class Delayer:
         self.num_delays = num_delays
         self.time_series = list()
         self.logging = logging
-        if (logging is True):
-            self.loss_list = list()
+        self.print_log = print_log
+        self.loss_list = list()
         
     def delete_time_series(self):
         """deletes the calculated time series of the compute_time_series method
         """
         self.time_series = list()
+        
+    def delete_loss_list(self):
+        self.loss_list = list()
         
     def add_copies(self):
         """adds copies to the time series of the initial value to be used for getting delays at the beginning
@@ -141,7 +145,8 @@ class Delayer:
             if self.logging is True:
                 loss_val = self.loss_function(x_state_new)
                 self.loss_list.append(loss_val)
-                print("Iteration: {}, Loss: {}, Distance from Previous State: {}".format(i, loss_val, comp_val))
+                if (self.print_log is True):
+                    print("Iteration: {}, Loss: {}, Distance from Previous State: {}".format(i, loss_val, comp_val))
             if (comp_val < tol):
                 conv_bool = True
                 break

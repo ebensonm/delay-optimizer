@@ -17,7 +17,10 @@ def use_nesterov(params):
     optimizer = NesterovMomentum(params)
     return optimizer
     
-def use_rast(n,max_L,num_delays,optimizer, constant_learning_rate,logging):
+def use_rast(n,max_L,num_delays,optimizer, constant_learning_rate,print_log):
+    logging = False
+    if (print_log is True):
+        logging = True
     np.random.seed(12)
     x_init = np.random.uniform(-5.12,5.12,n)
     loss_function = rastrigin_gen(n)
@@ -33,10 +36,13 @@ def use_rast(n,max_L,num_delays,optimizer, constant_learning_rate,logging):
         'step_size': hp.choice('step_size', np.arange(100,2500,100))
         }
     
-    delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays, logging)
+    delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays, logging, print_log)
     return delayer, space_search, -5.12, 5.12
     
-def use_ackley(n,max_L,num_delays,optimizer,constant_learning_rate,logging):
+def use_ackley(n,max_L,num_delays,optimizer,constant_learning_rate,print_log):
+    logging = False
+    if (print_log is True):
+        logging = True
     np.random.seed(12)            
     x_init = np.random.uniform(-32.,32.,n)
     loss_function = ackley_gen(n)
@@ -51,10 +57,13 @@ def use_ackley(n,max_L,num_delays,optimizer,constant_learning_rate,logging):
         'min_learning_rate': hp.uniform('min_learning_rate', 0.0, 1.0),
         'step_size': hp.choice('step_size', np.arange(100,2500,100))
         }
-    delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays)
+    delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays, logging, print_log)
     return delayer, space_search, -32., 32.
     
-def use_combustion(n,max_L,num_delays,optimizer,constant_learning_rate,vary_percent,logging):
+def use_combustion(n,max_L,num_delays,optimizer,constant_learning_rate,vary_percent,print_log):
+    logging = False
+    if (print_log is True):
+        logging = True
     #get the combustion model values
     x_min, x_init, objective, gradient = get_combustion_model(vary_percent=vary_percent)
     #define the space to search for optimizer hyperparameters
@@ -68,7 +77,7 @@ def use_combustion(n,max_L,num_delays,optimizer,constant_learning_rate,vary_perc
         'min_learning_rate': hp.uniform('min_learning_rate', 0.0, 1.0),
         'step_size': hp.choice('step_size', np.arange(10,500,10))
         }
-    delayer = Delayer(n, optimizer, objective, gradient, x_init, max_L, num_delays, logging)
+    delayer = Delayer(n, optimizer, objective, gradient, x_init, max_L, num_delays, logging, print_log)
     return delayer, space_search, x_min    
     
 def test_builder(args):
@@ -85,11 +94,11 @@ def test_builder(args):
          optimizer = use_nesterov(params={'gamma':0.6, 'learning_rate':0.1}) 
      #now define the loss function
      if (args['loss_name'] == 'Rastrigin'):
-         args['delayer'], args['space_search'], args['min_val'], args['max_val']=use_rast(n, max_L, num_delays, optimizer, constant_learning_rate, args['logging'])
+         args['delayer'], args['space_search'], args['min_val'], args['max_val']=use_rast(n, max_L, num_delays, optimizer, constant_learning_rate, args['print_log'])
      elif (args['loss_name'] == 'Ackley'):
-         args['delayer'], args['space_search'], args['min_val'], args['max_val']=use_ackley(n, max_L, num_delays, optimizer, constant_learning_rate, args['logging'])
+         args['delayer'], args['space_search'], args['min_val'], args['max_val']=use_ackley(n, max_L, num_delays, optimizer, constant_learning_rate, args['print_log'])
      elif (args['loss_name'] == 'Combustion'):
-         args['delayer'], args['space_search'], args['minimizer'] = use_combustion(n, max_L, num_delays, optimizer, constant_learning_rate, args['vary_percent'], args['logging'])
+         args['delayer'], args['space_search'], args['minimizer'] = use_combustion(n, max_L, num_delays, optimizer, constant_learning_rate, args['vary_percent'], args['print_log'])
      else:
          raise ValueError("Not a valid objective function use {Rastrigin, Ackley, or Combustion}")
      #now return all the needed parameters as a dictionary
