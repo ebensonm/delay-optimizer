@@ -1,0 +1,26 @@
+{
+    "dim": 100,
+    "max_L": 1,
+    "num_delays": 1000,
+    "use_delays": false,
+    "maxiter": 2500,
+    "optimizer_name": "Adam",
+    "loss_name": "Rastrigin",
+    "tol": 1e-05,
+    "max_evals": 1000,
+    "symmetric_delays": true,
+    "constant_learning_rate": false,
+    "num_tests": 1,
+    "filename": "UnDelayed_Rast_100d",
+    "num_test_initials": 5,
+    "min_val": -5.12,
+    "max_val": 5.12,
+    "best_params": {
+        "max_learning_rate": 2.353213545933108,
+        "min_learning_rate": 0.6079746179393597,
+        "step_size": 400,
+        "best_loss": 937.0441442082979
+    },
+    "percent_converge": 0.94,
+    "Num_Initial_Values": 250
+}

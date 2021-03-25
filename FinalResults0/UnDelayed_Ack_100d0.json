@@ -1,0 +1,26 @@
+{
+    "dim": 100,
+    "max_L": 1,
+    "num_delays": 1000,
+    "use_delays": false,
+    "maxiter": 2000,
+    "optimizer_name": "Adam",
+    "loss_name": "Ackley",
+    "tol": 1e-05,
+    "max_evals": 500,
+    "symmetric_delays": true,
+    "constant_learning_rate": false,
+    "num_tests": 1,
+    "filename": "UnDelayed_Ack_100d",
+    "num_test_initials": 5,
+    "min_val": -32.0,
+    "max_val": 32.0,
+    "best_params": {
+        "max_learning_rate": 3.9956144952100248,
+        "min_learning_rate": 0.7476748793358327,
+        "step_size": 800,
+        "best_loss": 21.781075197932132
+    },
+    "percent_converge": 0.884,
+    "Num_Initial_Values": 250
+}
