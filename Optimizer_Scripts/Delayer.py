@@ -3,8 +3,8 @@ import time
 
 class Delayer:
 
-    def __init__(self, n, optimizer, loss_function, grad, x_init, max_L=2, 
-                 num_delays=None, logging=False, print_log=False):
+    def __init__(self, n, optimizer, loss_function, grad, x_init=None, max_L=2, 
+                 num_delays=None, logging=False, print_log=False, save_grad=False):
         """The initializer for the Delayer class
             
            Parameters - 
@@ -29,6 +29,8 @@ class Delayer:
         self.logging = logging
         self.print_log = print_log
         self.loss_list = list()
+        self.save_grad = save_grad
+        self.grad_list = list()
         
     def delete_time_series(self):
         """deletes the calculated time series of the compute_time_series method
@@ -37,6 +39,9 @@ class Delayer:
         
     def delete_loss_list(self):
         self.loss_list = list()
+        
+    def delete_grad_list(self):
+        self.grad_list = list()
         
     def add_copies(self):
         """adds copies to the time series of the initial value to be used for getting delays at the beginning
@@ -81,7 +86,9 @@ class Delayer:
             #handle the exception case in the combustion problem
             if (x_grad is None):
                 return None      
-            x_state_new = self.Optimizer(self.time_series[index_val], x_grad, iter_val)                    
+            x_state_new = self.Optimizer(self.time_series[index_val], x_grad, iter_val) 
+        if (self.save_grad is True):
+            self.grad_list.append(np.linalg.norm(x_grad))                   
         return x_state_new                                       #return the new state
         
     def initialize_time_series(self, maxiter, save_time_series):
@@ -132,12 +139,14 @@ class Delayer:
                 if (new_value is None):
                     break
                 x_state_new = new_value
-            else:            
+            else:         
                 value = self.time_series[index_val]    #computation without delays
                 x_grad = self.grad(value)
                 #handle the exception case in the gradient problem
                 if (x_grad is None):
                     break
+                if (self.save_grad is True):
+                    self.grad_list.append(np.linalg.norm(x_grad))                   
                 x_state_new = self.Optimizer(self.time_series[index_val], x_grad, i+1)  #compute the update step
             x_state_old = self.add_new_state(save_time_series, x_state_new,i) #add the state to the time series
             comp_val = np.linalg.norm(x_state_new - x_state_old)
@@ -152,6 +161,8 @@ class Delayer:
                 break
         #save algorithm variables        
         self.Optimizer.initialized = False                    #reset the input optimizer
+        if ((len(self.grad_list)>=self.num_delays)):
+            self.grad_list = self.grad_list[:self.num_delays]
         if (save_time_series is True):
             self.time_series = self.time_series[self.max_L:i+2+self.max_L,:] #remove copies and end zeros
         self.final_state = x_state_new                        #save the final state

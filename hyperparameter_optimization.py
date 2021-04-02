@@ -127,7 +127,7 @@ def run_test(delayer,x_init,args,params):
         
 def const_lr_gen(params):
     GO = True
-    learning_rate = params.learning_rate
+    learning_rate = params['learning_rate']
     while GO is True:
        yield learning_rate
 
