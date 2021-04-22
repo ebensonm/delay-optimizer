@@ -38,7 +38,7 @@ mpirun python -u hyperparameter_optimization.py --dim 1000 \
 --max_L 1 --num_delays 1000 --use_delays True --maxiter 2500 \
 --optimizer_name "Adam" --loss_name "Rastrigin" --tol 1e-5 \
 --max_evals 1000 --symmetric_delays True --constant_learning_rate False \
---num_tests 1 --filename "Delayed_Rast_1000d" --num_test_initials 5
+--num_tests 1 --filename "Test_Rast" --num_test_initials 5 --clip_grad True --clip_val 1.0
 
 #now run the script with the appropriate arguments
 mpirun python -u hyperparameter_optimization.py --dim 10000 \

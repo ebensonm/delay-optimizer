@@ -121,6 +121,18 @@ def get_arguments(raw_args=None):
                         choices=["loss", "distance"],
                         default="loss"
     )
+    parser.add_argument('--clip_grad',
+                        '-b',
+                        help=("If gradient clipping should be added to the model"),
+                        type=str2bool,
+                        default="false"
+    )
+    parser.add_argument('--clip_val',
+                        '-q',
+                        help=("The value by which to normalize the gradient norm"),
+                        type=float,
+                        default=1.0
+    )
     
     args = parser.parse_args(raw_args)
     return args
