@@ -1,0 +1,28 @@
+{
+    "dim": 216,
+    "max_L": 3,
+    "num_delays": 500,
+    "use_delays": true,
+    "maxiter": 1000,
+    "optimizer_name": "Adam",
+    "loss_name": "Combustion",
+    "tol": 0.0001,
+    "max_evals": 50,
+    "symmetric_delays": true,
+    "constant_learning_rate": false,
+    "num_tests": 1,
+    "filename": "Combustion_Test_3_10",
+    "num_test_initials": 1,
+    "logging": false,
+    "vary_percent": 0.1,
+    "hyper_minimize": "loss",
+    "best_params": {
+        "max_learning_rate": 0.05,
+        "min_learning_rate": 0.001,
+        "step_size": 330,
+        "best_loss": 80512.43030656001
+    },
+    "test_time": 78597.545,
+    "percent_converge": 0.58,
+    "Num_Initial_Values": 50
+}
