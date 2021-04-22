@@ -19,4 +19,5 @@ mpirun python -u hyperparameter_optimization.py --dim 216 \
 --optimizer_name "Adam" --loss_name "Combustion" --tol 1e-4 \
 --max_evals 200 --symmetric_delays True --constant_learning_rate False \
 --num_tests 1 --filename "Combustion_Test_10" --num_test_initials 1 \
---print_log False --vary_percent 0.1 --hyper_minimize "loss"
+--print_log True --vary_percent 0.1 --hyper_minimize "loss" \
+--clip_grad True --clip_val 10000.0

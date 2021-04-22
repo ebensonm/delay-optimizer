@@ -4,7 +4,8 @@ import time
 class Delayer:
 
     def __init__(self, n, optimizer, loss_function, grad, x_init=None, max_L=2, 
-                 num_delays=None, logging=False, print_log=False, save_grad=False):
+                 num_delays=None, logging=False, print_log=False, save_grad=False,
+                 clipping=False, clip_val=1.0):
         """The initializer for the Delayer class
             
            Parameters - 
@@ -31,6 +32,8 @@ class Delayer:
         self.loss_list = list()
         self.save_grad = save_grad
         self.grad_list = list()
+        self.clipping = clipping
+        self.clip_val = clip_val
         
     def delete_time_series(self):
         """deletes the calculated time series of the compute_time_series method
@@ -47,6 +50,16 @@ class Delayer:
         """adds copies to the time series of the initial value to be used for getting delays at the beginning
         """
         self.time_series[:self.max_L+1,:] = self.x_init
+        
+    def compute_grad(self, state):
+        grad = self.grad(state)
+        if (self.clipping is True and grad is not None):
+            #if the gradient norm is outside of the range rescale the gradient
+            norm_val = np.linalg.norm(grad)
+            if (norm_val > self.clip_val):
+                #rescale the gradient
+                grad = grad/norm_val
+        return grad
         
     def use_delay(self, index_val, iter_val, random=True, symmetric_delays=False, D=None, shrink=False):
         """Called up by the compute_time_series method and adds the delay and computes the state/states to
@@ -66,7 +79,8 @@ class Delayer:
                 else:
                     D = index_val - D  
                 x_state = self.time_series[D, self.list_n].reshape(self.n, self.n)      #use indexing to delay
-                x_grad = np.diag(self.grad(x_state - self.Optimizer.grad_helper)) #get the gradient of the delays
+                value = x_state - self.Optimizer.grad_helper
+                x_grad = np.diag(self.compute_grad(value))                     #get the gradient of the delays
                 x_state = np.diag(x_state)                                       #get the state to update from     
             else:
                 if (random is True):
@@ -75,14 +89,14 @@ class Delayer:
                     D = index_val - D
                 x_state = self.time_series[D, self.list_n[:self.n]]               #use indexing to delay
                 value = x_state - self.Optimizer.grad_helper
-                x_grad = self.grad(value)       #get the gradient of the delays
+                x_grad = self.compute_grad(value)       #get the gradient of the delays
             #handle the exception case in the combustion problem
             if (x_grad is None):
                 return None
             x_state_new = self.Optimizer(x_state, x_grad, iter_val)                 #update!   
         else:
             value = self.time_series[index_val] - self.Optimizer.grad_helper
-            x_grad = self.grad(self.time_series[index_val] - self.Optimizer.grad_helper)  
+            x_grad = self.compute_grad(value)  
             #handle the exception case in the combustion problem
             if (x_grad is None):
                 return None      
@@ -141,7 +155,7 @@ class Delayer:
                 x_state_new = new_value
             else:         
                 value = self.time_series[index_val]    #computation without delays
-                x_grad = self.grad(value)
+                x_grad = self.compute_grad(value)
                 #handle the exception case in the gradient problem
                 if (x_grad is None):
                     break

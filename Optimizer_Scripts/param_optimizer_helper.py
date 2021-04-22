@@ -17,7 +17,7 @@ def use_nesterov(params):
     optimizer = NesterovMomentum(params)
     return optimizer
     
-def use_rast(n,max_L,num_delays,optimizer, constant_learning_rate,print_log):
+def use_rast(n,max_L,num_delays,optimizer,constant_learning_rate,print_log,clip_grad,clip_val):
     logging = False
     if (print_log is True):
         logging = True
@@ -36,7 +36,8 @@ def use_rast(n,max_L,num_delays,optimizer, constant_learning_rate,print_log):
         'step_size': hp.choice('step_size', np.arange(100,2500,100))
         }
     
-    delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays, logging, print_log)
+    delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, 
+                      num_delays, logging, print_log, clipping=clip_grad, clip_val=clip_val)
     return delayer, space_search, -5.12, 5.12
     
 def use_ackley(n,max_L,num_delays,optimizer,constant_learning_rate,print_log):
@@ -60,7 +61,7 @@ def use_ackley(n,max_L,num_delays,optimizer,constant_learning_rate,print_log):
     delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays, logging, print_log)
     return delayer, space_search, -32., 32.
     
-def use_combustion(n,max_L,num_delays,optimizer,constant_learning_rate,vary_percent,print_log):
+def use_combustion(n,max_L,num_delays,optimizer,constant_learning_rate,vary_percent,print_log, clip_grad,clip_val):
     logging = False
     if (print_log is True):
         logging = True
@@ -73,11 +74,12 @@ def use_combustion(n,max_L,num_delays,optimizer,constant_learning_rate,vary_perc
         }
     else:
         space_search = {
-        'max_learning_rate': hp.uniform('max_learning_rate', 1.0, 3.0),
+        'max_learning_rate': hp.uniform('max_learning_rate', 0.0, 2.0),
         'min_learning_rate': hp.uniform('min_learning_rate', 0.0, 1.0),
         'step_size': hp.choice('step_size', np.arange(10,500,10))
         }
-    delayer = Delayer(n, optimizer, objective, gradient, x_init, max_L, num_delays, logging, print_log)
+    delayer = Delayer(n, optimizer, objective, gradient, x_init, max_L, num_delays, 
+                      logging, print_log,clipping=clip_grad, clip_val=clip_val)
     return delayer, space_search, x_min    
     
 def test_builder(args):
@@ -94,11 +96,11 @@ def test_builder(args):
          optimizer = use_nesterov(params={'gamma':0.6, 'learning_rate':0.1}) 
      #now define the loss function
      if (args['loss_name'] == 'Rastrigin'):
-         args['delayer'], args['space_search'], args['min_val'], args['max_val']=use_rast(n, max_L, num_delays, optimizer, constant_learning_rate, args['print_log'])
+         args['delayer'], args['space_search'], args['min_val'], args['max_val']=use_rast(n, max_L, num_delays, optimizer, constant_learning_rate, args['print_log'], args['clip_grad'], args['clip_val'])
      elif (args['loss_name'] == 'Ackley'):
          args['delayer'], args['space_search'], args['min_val'], args['max_val']=use_ackley(n, max_L, num_delays, optimizer, constant_learning_rate, args['print_log'])
      elif (args['loss_name'] == 'Combustion'):
-         args['delayer'], args['space_search'], args['minimizer'] = use_combustion(n, max_L, num_delays, optimizer, constant_learning_rate, args['vary_percent'], args['print_log'])
+         args['delayer'], args['space_search'], args['minimizer'] = use_combustion(n, max_L, num_delays, optimizer, constant_learning_rate, args['vary_percent'], args['print_log'], args['clip_grad'], args['clip_val'])
      else:
          raise ValueError("Not a valid objective function use {Rastrigin, Ackley, or Combustion}")
      #now return all the needed parameters as a dictionary
