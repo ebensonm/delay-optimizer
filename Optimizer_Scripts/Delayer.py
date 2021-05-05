@@ -105,9 +105,6 @@ class Delayer:
             x_state = self.time_series[D, self.list_n[:self.n]]               #use indexing to delay
             value = x_state - self.Optimizer.grad_helper
             x_grad = self.compute_grad(value)       #get the gradient of the delays
-        #handle the exception case in the combustion problem
-        if (x_grad is None):
-            return None
         x_state_new = self.Optimizer(x_state, x_grad, iter_val)                 #update!   
         if (self.save_grad is True):
             self.grad_list.append(np.linalg.norm(x_grad))                   
@@ -120,8 +117,6 @@ class Delayer:
         value = self.time_series[index_val]    #computation without delays
         x_grad = self.compute_grad(value)
         #handle the exception case in the gradient problem
-        if (x_grad is None):
-            return None
         if (self.save_grad is True):
             self.grad_list.append(np.linalg.norm(x_grad))                   
         x_state_new = self.Optimizer(self.time_series[index_val], x_grad, i+1)  #compute the update step    
@@ -163,7 +158,7 @@ class Delayer:
         return x_state_old 
         
         
-    def compute_time_series(self, tol=1e-10, maxiter=5000, use_delays=False, random=True, symmetric_delays=False,
+    def compute_time_series(self, tol=1e-10, maxiter=5000, use_delays=False, random=True, symmetric_delays=True,
                             D=None, shrink=False, save_time_series=True):
         """computes the time series using the passed Optimizer from __init__, saves convergence
            and time_series (if specified) which is an array of the states
@@ -187,8 +182,6 @@ class Delayer:
                                            shrink=shrink, iter_val=i+1)  #use_delay to get state
             else:
                 new_value = self.no_delay(index_val=index_val, i=i)  #get the update value without delays       
-            if new_value is None:  #break if the gradient computation failed
-                break
             x_state_new = new_value  #update the value
             x_state_old = self.add_new_state(save_time_series, x_state_new,i) #add the state to the time series
             #track losses over time (temporal complexity dependent on computation cost of functional value)

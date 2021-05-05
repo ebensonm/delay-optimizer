@@ -1,5 +1,3 @@
-from julia.api import Julia
-jl = Julia(compiled_modules=False)
 import numpy as np
 from hyperopt import hp, tpe, fmin, Trials
 from mpi4py import MPI
@@ -29,9 +27,7 @@ def main(**args):
             arg_dict['best_params']['step_size'] = int(arg_dict['best_params']['step_size'])
             arg_dict['best_params']['best_loss'] = best_loss
             arg_dict['percent_converge'] = final_sum[arg_min]
-            arg_dict['Num_Initial_Values'] = COMM.size*arg_dict['num_test_initials']
-            if (arg_dict['loss_name']=='Combustion'):
-                del arg_dict['minimizer']
+            arg_dict['num_initial_values'] = COMM.size*arg_dict['num_test_initials']
             del arg_dict['delayer'], arg_dict['space_search']
             #save the resulting dictionary as a json file
             with open(arg_dict['filename']+'{}.json'.format(i), 'w') as fp:
@@ -49,10 +45,7 @@ def parameter_optimizer(args):
     #delete to save space
     del trials
     #find the optimal hyperparameters from the space searched
-    if (args['loss_name']=='Combustion'):
-        search_options = np.arange(10,500,10)
-    else:
-        search_options = np.arange(100,2500,100)
+    search_options = np.arange(100,2500,100)
     #handle the case without a constant learning rate
     if (args['constant_learning_rate'] is False):
         best['step_size'] = search_options[best['step_size']]
@@ -68,15 +61,9 @@ def initial_points_test(args,params):
     #reset the learning values in the optimizer
     if (COMM.rank == 0):
         #get the initial values
-        if (args['loss_name']=='Rastrigin' or args['loss_name']=='Ackley'):
-            job_vals = np.random.uniform(args['min_val'], args['max_val'], 
+        job_vals = np.random.uniform(args['min_val'], args['max_val'], 
                                     (COMM.size*args['num_test_initials'],args['dim']))
-            #split so we can run this process in parallel
-        elif (args['loss_name']=='Combustion'):
-            minimizer = args['minimizer']
-            job_vals = 1.0 + np.random.uniform(-args['vary_percent'],args['vary_percent'],
-                                         (COMM.size*args['num_test_initials'],args['dim']))
-            job_vals = job_vals * minimizer
+        #split so we can run this process in parallel
         job_vals = np.vsplit(job_vals, COMM.size)
     else:
         job_vals = None
