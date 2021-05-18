@@ -1,5 +1,3 @@
-from julia.api import Julia
-jl = Julia(compiled_modules=False)
 import numpy as np
 from hyperopt import hp, tpe, fmin, Trials
 from mpi4py import MPI
@@ -9,6 +7,8 @@ import copy
 from functools import partial
 import json
 import time
+from Optimizer_Scripts.learning_rate_generator import generate_learning_rates
+
 
 def main(**args):
     optimizer_arguments = test_builder(args)
@@ -29,9 +29,7 @@ def main(**args):
             arg_dict['best_params']['step_size'] = int(arg_dict['best_params']['step_size'])
             arg_dict['best_params']['best_loss'] = best_loss
             arg_dict['percent_converge'] = final_sum[arg_min]
-            arg_dict['Num_Initial_Values'] = COMM.size*arg_dict['num_test_initials']
-            if (arg_dict['loss_name']=='Combustion'):
-                del arg_dict['minimizer']
+            arg_dict['num_initial_values'] = COMM.size*arg_dict['num_test_initials']
             del arg_dict['delayer'], arg_dict['space_search']
             #save the resulting dictionary as a json file
             with open(arg_dict['filename']+'{}.json'.format(i), 'w') as fp:
@@ -49,10 +47,7 @@ def parameter_optimizer(args):
     #delete to save space
     del trials
     #find the optimal hyperparameters from the space searched
-    if (args['loss_name']=='Combustion'):
-        search_options = np.arange(10,500,10)
-    else:
-        search_options = np.arange(100,2500,100)
+    search_options = np.arange(100,2500,100)
     #handle the case without a constant learning rate
     if (args['constant_learning_rate'] is False):
         best['step_size'] = search_options[best['step_size']]
@@ -68,15 +63,9 @@ def initial_points_test(args,params):
     #reset the learning values in the optimizer
     if (COMM.rank == 0):
         #get the initial values
-        if (args['loss_name']=='Rastrigin' or args['loss_name']=='Ackley'):
-            job_vals = np.random.uniform(args['min_val'], args['max_val'], 
+        job_vals = np.random.uniform(args['min_val'], args['max_val'], 
                                     (COMM.size*args['num_test_initials'],args['dim']))
-            #split so we can run this process in parallel
-        elif (args['loss_name']=='Combustion'):
-            minimizer = args['minimizer']
-            job_vals = 1.0 + np.random.uniform(-args['vary_percent'],args['vary_percent'],
-                                         (COMM.size*args['num_test_initials'],args['dim']))
-            job_vals = job_vals * minimizer
+        #split so we can run this process in parallel
         job_vals = np.vsplit(job_vals, COMM.size)
     else:
         job_vals = None
@@ -124,49 +113,6 @@ def run_test(delayer,x_init,args,params):
     if (args['hyper_minimize']=='distance'):
        loss_val = np.linalg.norm(args['minimizer']-delayer.final_state) 
     return loss_val, value
-        
-def const_lr_gen(params):
-    GO = True
-    learning_rate = params['learning_rate']
-    while GO is True:
-       yield learning_rate
-
-def non_const_lr_gen(params):  
-    #dummy variable for running the generator
-    GO = True
-    #counter for the iterations
-    counter = 0
-    #variable for how many iterations per triangle side
-    lr_num = params['step_size']
-    min_lr = params['min_learning_rate']
-    max_lr = params['max_learning_rate']
-    #compute the step size
-    dh = (max_lr - min_lr)/lr_num
-    #the learning rate starter
-    learning_rate = params['min_learning_rate'] - dh
-    counter_counter = 0
-    while GO is True:
-        counter += 1
-        if (counter % lr_num == 0):
-            counter_counter += 1
-            #shrinking triangle part of the changing learning rate
-            if (counter_counter % 2 == 0):
-                max_lr -= (max_lr-min_lr)/2
-                dh = (max_lr - min_lr)/lr_num
-                counter_counter = 0
-            else:
-                dh = dh*-1
-            counter = 0
-        learning_rate += dh
-        yield learning_rate      
-        
-def generate_learning_rates(constant_lr, params):
-    """ Create the learning rate generator for constant and nonconstant learning rates
-    """
-    if (constant_lr is True):
-        return const_lr_gen(params)
-    else:
-        return non_const_lr_gen(params)
         
 if __name__ == "__main__":
     #pass the command line arguments to the main function
