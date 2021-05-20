@@ -39,21 +39,23 @@ if __name__ == "__main__":
     #run the optimizer
     delayed_optimizer.compute_time_series(use_delays=True, save_time_series=True)
     
-    #TODO - plot the results of the optimization
     
+    # plot the gradient over time
     time = np.arange(len(delayed_optimizer.grad_list))
     plt.plot(time, delayed_optimizer.grad_list, lw=.5)
     plt.xlabel("Time")
     plt.ylabel("Gradient")
-    plt.title("Gradient of the Ackley Function over time")
+    plt.title("Gradient of the Loss Function over time")
     plt.show()
     
+    # plot the loss function over time
     plt.plot(time, delayed_optimizer.loss_list, lw=.5)
     plt.xlabel("Time")
     plt.ylabel("Loss Function")
-    plt.title("Value of the Ackley Function over time")
+    plt.title("Value of the Loss Function over time")
     plt.show()
     
+    # plot (x,y) over time
     x = delayed_optimizer.time_series[:,0]
     y = delayed_optimizer.time_series[:,1]
     plt.plot(time, x[1:], lw=.5, label='x')
@@ -64,6 +66,7 @@ if __name__ == "__main__":
     plt.title("Values x and y of the optimization over time")
     plt.show()
     
+    # plot x and y together
     plt.plot(x, y, zorder=0)
     plt.scatter(x[0], y[0], label="Initial point", c='forestgreen', zorder=1)
     plt.scatter(x[-1], y[-1], label="Optimizer", c='C1', zorder=1)
