@@ -72,10 +72,7 @@ def rosen_deriv_gen(n, a=1, b=100):
         grad[0] = -4*b*(x[1] - x[0]**2)*x[0] - 2*(a-x[0])
         grad[-1] = 2*b*(x[-1]-x[-2]**2)
         grad[1:-1] = 2*b*(x1-x0**2) - 4*b*(x2 - x1**2)*x1 - 2*(a-x1)
-        print(grad)
         return grad
-    
-    rosen_grad(np.array([0,0,0,1,0,0,0,0,0,3]))
     return rosen_grad
         
         
