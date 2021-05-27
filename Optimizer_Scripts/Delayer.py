@@ -100,7 +100,7 @@ class Delayer:
             if (random is True):
                 D = index_val - np.random.randint(0,self.num_max_delay+1,self.n**2)  #get list of random delays
             else:
-                D = index_val - D  
+                D = index_val - next(D)  
             x_state = self.time_series[D, self.list_n].reshape(self.n, self.n)      #use indexing to delay
             value = x_state - self.Optimizer.grad_helper
             x_grad = np.diag(self.compute_grad(value))                     #get the gradient of the delays
@@ -109,7 +109,7 @@ class Delayer:
             if (random is True):
                 D = index_val - np.random.randint(0, self.num_max_delay+1,self.n)
             else:
-                D = index_val - D
+                D = index_val - next(D)
             x_state = self.time_series[D, self.list_n[:self.n]]               #use indexing to delay
             value = x_state - self.Optimizer.grad_helper
             x_grad = self.compute_grad(value)       #get the gradient of the delays
@@ -176,6 +176,15 @@ class Delayer:
                maxiter (int) - the max number of iterations before determining it did not converge
                use_delays (bool) - whether or not to call the use_delay method which adds delays to
                the state vector
+               random (bool) - whether or not to generate random stochastic delays
+               symmetric_delays (bool) - whether or not to us "symmetric" time delays, which only requires
+               a single gradient computation
+               D (generator or iterator type) - if random is False, then we use the given generator to choose
+               the next delay distribution
+               shrink (bool) - whether or not to decrease the max delay over time, really only relavant when the 
+               max delay is greater than one
+               save_time_series (bool) - whether or not to preserve state update time series for analyzation of the 
+               process - this can greatly increase the required memory in larger dimensional systems
         """  
         conv_bool = False                                       #initialize the convergence boolean
         self.initialize_time_series(maxiter, save_time_series)  
