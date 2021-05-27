@@ -1,6 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import time
+from Optimizer_Scripts.delay_distribution_generator import get_distribution
 
 class Delayer:
 
@@ -85,7 +86,7 @@ class Delayer:
         return grad
         
         
-    def use_delay(self, index_val, iter_val, random=True, symmetric_delays=False, D=None, shrink=False):
+    def use_delay(self, index_val=0, iter_val=0, symmetric_delays=False, D=None):
         """Called up by the compute_time_series method and adds the delay and computes the state/states to
            do computations on
   
@@ -93,26 +94,18 @@ class Delayer:
                iter_val (int) - the value of the iteration of compute_time_series
            returns - 
                x_state_new (ndarray, (n,)) - the next state after delayed computations
-        """
-        if (iter_val % (self.num_delays // self.max_L) == 0 and shrink==True):    #shrink delays every interval
-            self.num_max_delay -= 1
+        """            
+        D = index_val - D 
         if (symmetric_delays is False):
-            if (random is True):
-                D = index_val - np.random.randint(0,self.num_max_delay+1,self.n**2)  #get list of random delays
-            else:
-                D = index_val - next(D)  
             x_state = self.time_series[D, self.list_n].reshape(self.n, self.n)      #use indexing to delay
             value = x_state - self.Optimizer.grad_helper
             x_grad = np.diag(self.compute_grad(value))                     #get the gradient of the delays
             x_state = np.diag(x_state)                                       #get the state to update from     
         else:
-            if (random is True):
-                D = index_val - np.random.randint(0, self.num_max_delay+1,self.n)
-            else:
-                D = index_val - next(D)
             x_state = self.time_series[D, self.list_n[:self.n]]               #use indexing to delay
             value = x_state - self.Optimizer.grad_helper
             x_grad = self.compute_grad(value)       #get the gradient of the delays
+            
         x_state_new = self.Optimizer(x_state, x_grad, iter_val)                 #update!   
         if (self.save_grad is True):
             self.grad_list.append(np.linalg.norm(x_grad))                   
@@ -167,7 +160,7 @@ class Delayer:
         
         
     def compute_time_series(self, tol=1e-10, maxiter=5000, use_delays=False, random=True, symmetric_delays=True,
-                            D=None, shrink=False, save_time_series=True):
+                            D=[0], shrink=False, save_time_series=True):
         """computes the time series using the passed Optimizer from __init__, saves convergence
            and time_series (if specified) which is an array of the states
            
@@ -179,8 +172,7 @@ class Delayer:
                random (bool) - whether or not to generate random stochastic delays
                symmetric_delays (bool) - whether or not to us "symmetric" time delays, which only requires
                a single gradient computation
-               D (generator or iterator type) - if random is False, then we use the given generator to choose
-               the next delay distribution
+               D (list) - a list of distributions, but this variable is irrelevant if random is set to true
                shrink (bool) - whether or not to decrease the max delay over time, really only relavant when the 
                max delay is greater than one
                save_time_series (bool) - whether or not to preserve state update time series for analyzation of the 
@@ -191,13 +183,14 @@ class Delayer:
         x_state_new = self.x_init         #initialize new state array/matrix
         if (self.print_log is True):
             pbar = tqdm(total=maxiter)
-        loss_val = "NA"
+        loss_val = "NA"        
+        D_gen = get_distribution(random=random, D=D, n=self.n, max_L=self.max_L, 
+                                 symmetric=symmetric_delays, shrink=shrink)  #get the delay distribution generator
         for i in range(maxiter):          #start optimizer iterations      
             index_val = self.compute_index_val(save_time_series,i)       #compute the index selection value
             if ((use_delays is True) and (i+1 < self.num_delays)):
-                new_value = self.use_delay(index_val = index_val, random=random, 
-                                           D=D, symmetric_delays=symmetric_delays, 
-                                           shrink=shrink, iter_val=i+1)  #use_delay to get state
+                new_value = self.use_delay(index_val = index_val, iter_val=i+1, 
+                                           symmetric_delays=symmetric_delays, D=next(D_gen))  #use_delay to get state
             else:
                 new_value = self.no_delay(index_val=index_val, i=i)  #get the update value without delays       
             x_state_new = new_value  #update the value
@@ -206,13 +199,14 @@ class Delayer:
             if self.compute_loss is True:
                 loss_val = self.loss_function(x_state_new)
                 self.loss_list.append(loss_val)
-            if (np.linalg.norm(x_state_new - x_state_old) < tol):  #stopping condition
-                conv_bool = True
-                break
             if (self.print_log is True):
                 pbar.set_description('Iteration:{}, Loss:{}'.format(i, loss_val))
-                pbar.update(1)  
-        if (self.print_log is True):
+                pbar.update(1)
+                
+            if (np.linalg.norm(x_state_new - x_state_old) < tol):  #stopping condition
+                conv_bool = True
+                break  
+        if (self.print_log is True):  #close the tqdm tracking bar
             pbar.close()    
         #save algorithm variables        
         self.Optimizer.initialized = False                    #reset the input optimizer
