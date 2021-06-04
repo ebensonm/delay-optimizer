@@ -7,6 +7,7 @@ def constant_distribution(D=None):
     same delay distribution everytime
     """
     go = True
+    D = D[0]
     while (go == True):
         yield D
 

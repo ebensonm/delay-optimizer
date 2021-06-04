@@ -192,7 +192,7 @@ class Delayer:
                 new_value = self.use_delay(index_val = index_val, iter_val=i+1, 
                                            symmetric_delays=symmetric_delays, D=next(D_gen))  #use_delay to get state
             else:
-                new_value = self.no_delay(index_val=index_val, i=i)  #get the update value without delays       
+                new_value = self.no_delay(index_val=index_val, i=i)  #get the update value without delays   
             x_state_new = new_value  #update the value
             x_state_old = self.add_new_state(save_time_series, x_state_new,i) #add the state to the time series
             #track losses over time (temporal complexity dependent on computation cost of functional value)
@@ -201,8 +201,7 @@ class Delayer:
                 self.loss_list.append(loss_val)
             if (self.print_log is True):
                 pbar.set_description('Iteration:{}, Loss:{}'.format(i, loss_val))
-                pbar.update(1)
-                
+                pbar.update(1)      
             if (np.linalg.norm(x_state_new - x_state_old) < tol):  #stopping condition
                 conv_bool = True
                 break  
