@@ -55,24 +55,44 @@ def poly_1_grad(x):
         
     return grad_array
 
-def rosenbrock_gen(n, a=1, b=100):
-    def rosenbrock(x, *args):
-        x0 = x[:-1]
-        x1 = x[1:]
-        return np.sum(b*np.square(x1-np.square(x0)) + np.square(a*np.ones(n-1)-x0))
+def rosenbrock_gen(n, a=1, b=100, uncoupled=False):
+    if uncoupled == True:
+        if n%2 != 0:
+            raise ValueError("Dimension for the uncoupled Rosenbrock function must be even")
+        def rosenbrock(x, *args):
+            x0 = x[::2]
+            x1 = x[1::2]
+            return np.sum(b*np.square(x1-np.square(x0)) + np.square(a*np.ones(int(n/2))-x0))
+    else:
+        def rosenbrock(x, *args):
+            x0 = x[:-1]
+            x1 = x[1:]
+            return np.sum(b*np.square(x1-np.square(x0)) + np.square(a*np.ones(n-1)-x0))
     return rosenbrock
 
-def rosen_deriv_gen(n, a=1, b=100):
-    def rosen_grad(x, *args):
-        grad = np.zeros(n)
-        x0 = x[:-2]
-        x1 = x[1:-1]
-        x2 = x[2:]
-        
-        grad[0] = -4*b*(x[1] - x[0]**2)*x[0] - 2*(a-x[0])
-        grad[-1] = 2*b*(x[-1]-x[-2]**2)
-        grad[1:-1] = 2*b*(x1-x0**2) - 4*b*(x2 - x1**2)*x1 - 2*(a-x1)
-        return grad
+def rosen_deriv_gen(n, a=1, b=100, uncoupled=False):
+    if uncoupled == True:
+        if n%2 != 0:
+            raise ValueError("Dimension for the uncoupled Rosenbrock function must be even")
+        def rosen_grad(x, *args):
+            grad = np.zeros(n)
+            x0 = x[::2]
+            x1 = x[1::2]
+            
+            grad[::2] = -4*b*(x1 - np.square(x0))*x0 - 2*(a*np.ones(int(n/2))-x0)
+            grad[1::2] = 2*b*(x1 - np.square(x0))
+            return grad
+    else:
+        def rosen_grad(x, *args):
+            grad = np.zeros(n)
+            grad2 = np.zeros(n)
+            x0 = x[:-1]
+            x1 = x[1:]
+
+            grad[:-1] = -4*b*(x1 - np.square(x0))*x0 - 2*(a*np.ones(n-1)-x0)
+            grad2[1:] = 2*b*(x1 - np.square(x0))
+            grad += grad2
+            return grad
     return rosen_grad
         
 def zakharov_gen(n):
