@@ -97,7 +97,8 @@ def rosen_deriv_gen(n, a=1, b=100, uncoupled=False):
         
 def zakharov_gen(n):
     def zakharov(x, *args):
-        isum = np.sum(0.5 * np.arange(1, n+1) * x)
+        i = np.arange(1, n+1)
+        isum = np.sum(0.5 * i * x)
         return np.sum(np.square(x)) + isum**2 + isum**4
     return zakharov
         
@@ -105,7 +106,7 @@ def zakharov_deriv_gen(n):
     def zakharov_grad(x, *args):
         i = np.arange(1, n+1)
         isum = np.sum(0.5 * i * x)
-        coeff = isum + 2*isum**3
-        return 2*x + coeff*i
+        coeff = 2*isum + 4*isum**3
+        return 2*x + coeff * 0.5 * i
     return zakharov_grad
             
