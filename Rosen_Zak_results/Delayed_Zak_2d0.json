@@ -5,13 +5,13 @@
     "use_delays": true,
     "maxiter": 3000,
     "optimizer_name": "Adam",
-    "loss_name": "Rosenbrock",
+    "loss_name": "Zakharov",
     "tol": 1e-05,
     "max_evals": 200,
     "symmetric_delays": true,
     "constant_learning_rate": false,
     "num_tests": 1,
-    "filename": "Delayed_Rosen_2d",
+    "filename": "Delayed_Zak_2d",
     "num_test_initials": 5,
     "print_log": false,
     "vary_percent": 0.1,
@@ -21,12 +21,12 @@
     "min_val": -5.0,
     "max_val": 10.0,
     "best_params": {
-        "max_learning_rate": 2.917445299778115,
-        "min_learning_rate": 0.5427218194366088,
-        "step_size": 100,
-        "best_loss": 1.1521959857698192
+        "max_learning_rate": 3.9453205411254526,
+        "min_learning_rate": 0.9002716481735573,
+        "step_size": 600,
+        "best_loss": 0.08388344122401029
     },
-    "test_time": 202.776,
-    "percent_converge": 0.92,
+    "test_time": 73.339,
+    "percent_converge": 1.0,
     "num_initial_values": 250
 }
