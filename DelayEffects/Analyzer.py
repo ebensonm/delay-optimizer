@@ -237,13 +237,12 @@ class Analyzer:
             tol(float): the tolerance value used in the system
             D(list): list of deay distributions for the Delayer class
             random(bool): whether delays should be stochastic or not
+            break_opt(bool): whether optimization should stop when convergence criteria is met
             save_state(bool): whether the class should save the time series of each point
-            save_loss(bool): whether the class should save loss values over time for
-                             each point
-            save_grad(bool): whether the class should save gradient values over time for
-                             each point
-            save_iters(bool): whether the class should save the number of iterations each
-                              point takes to converge
+            save_loss(bool): whether the class should save loss values over time for each point
+            save_grad(bool): whether the class should save gradient values over time for each point
+            save_iters(bool): whether the class should save the number of iterations each point takes 
+                              to converge
         """
         if delayed == 'both':
             # If 'both' run the function for both True and False
@@ -394,7 +393,7 @@ class Analyzer:
                delayed - whether to plot delayed values (True), undelayed values (False), or 'both'
                type_plot(str) - 'finals' for final state, loss, gradient, or iteration values
                                 'path' to plot the paths of points 
-                                'convergence' for basin of attraction plots
+                                'basin' for basin of attraction plots
                focus(str) - value to be plotted ('state', 'loss', 'grad', 'iters')
                num_bins(int) - the number of bins used [finals]
                fixed_bins(bool) - should the bins be the same for the delayed and undelayed 
@@ -404,14 +403,14 @@ class Analyzer:
                fixed_limits(bool) - whether to fix the limits of the graph to the range_grid or
                                     let the program pick its own limits [path]
                contour_plot(bool) - whether to plot the contour of the function on top of the plot
-                                    [convergence]
+                                    [basin]
                include_exteriors(bool) - whether to plot the values for points that did not converge
-                                         [convergence]
+                                         [basin]
         """
         # Error checker
         if delayed not in ('both', True, False):
             raise ValueError("Variable 'delays' must be 'both', True, or False.")
-        if type_plot not in ('finals', 'path', 'convergence'):
+        if type_plot not in ('finals', 'path', 'basin'):
             raise ValueError("Plot type '{}' does not exist.".format(type_plot))
         if focus not in ('state', 'loss', 'grad', 'iters'):
             raise ValueError("Plot focus must be 'state', 'loss', 'grad', or 'iters', not {}.".format(focus))
@@ -514,18 +513,18 @@ class Analyzer:
             if title is None:
                 title = "Path Tracker on the {} function of {} dimensions".format(self.loss_name, self.n)
                     
-        elif type_plot == 'convergence':
+        elif type_plot == 'basin':
             # Check that the focus is correct
             if focus == 'state':
-                raise ValueError("Convergence plot type must have a focus of 'loss', 'grad', or 'iters'.")
+                raise ValueError("Basin plot type must have a focus of 'loss', 'grad', or 'iters'.")
 
             # Check that points were computed as a grid
             if self.grid is None:
-                raise ValueError("Convergence plot type is only compatible with 'grid' test type.")
+                raise ValueError("Basin plot type is only compatible with 'grid' test type.")
                 
             # Check that function is 2D
             if self.n != 2:
-                raise ValueError("Convergence plot type is only compatible with functions of dimension 2.")
+                raise ValueError("Basin plot type is only compatible with functions of dimension 2.")
             
             if delayed == 'both':
                 fig, ax = plt.subplots(2, 1, figsize=(10,16))
@@ -583,12 +582,11 @@ class Analyzer:
                 for i in range(num_points):
                     Z[i] = final_values[i]
                     if include_exteriors is False:    # Do not include points that did not converge
-                        print(self.del_conv[i])
                         if delayed is True:
-                            if self.conv[i] is False:  
+                            if self.del_conv[i] is False:  
                                 Z[i] = np.nan
                         else:
-                            if self.del_conv[i] is False:
+                            if self.conv[i] is False:
                                 Z[i] = np.nan
                 
                 Z = np.resize(Z, (len(X),len(Y))).T
@@ -613,9 +611,9 @@ class Analyzer:
                     ax.contour(X, Y, Z, locator=ticker.LogLocator(), cmap=cmap2)
             
             if title is None:
-                title = "{} Convergence Plot".format(type_str)
+                title = "{} Basin of Attraction Plot".format(type_str)
             
-        fig.suptitle(title)
+        fig.suptitle(title, size='xx-large')
         fig.tight_layout()
         fig.subplots_adjust(top=0.95)
         plt.show()
