@@ -3,7 +3,7 @@
     "max_L": 1,
     "num_delays": 1000,
     "use_delays": true,
-    "maxiter": 2000,
+    "maxiter": 3000,
     "optimizer_name": "Adam",
     "loss_name": "Rosenbrock",
     "tol": 1e-05,
@@ -21,12 +21,12 @@
     "min_val": -5.0,
     "max_val": 10.0,
     "best_params": {
-        "max_learning_rate": 1.7641137025583493,
-        "min_learning_rate": 0.7093281492940412,
-        "step_size": 1100,
-        "best_loss": 94637.34367617956
+        "max_learning_rate": 3.6307240705493578,
+        "min_learning_rate": 0.027635565134123685,
+        "step_size": 900,
+        "best_loss": 27105.493326408097
     },
-    "test_time": 2216.956,
+    "test_time": 2372.041,
     "percent_converge": 0.0,
     "num_initial_values": 250
 }
