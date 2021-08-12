@@ -65,7 +65,7 @@ def use_rosenbrock(n,max_L,num_delays,optimizer,constant_learning_rate,print_log
     if (print_log is True):
         logging = True
     np.random.seed(12)
-    x_init = np.random.uniform(-5.,10.,n)
+    x_init = np.random.uniform(-10.,10.,n)
     loss_function = rosenbrock_gen(n)
     deriv_loss = rosen_deriv_gen(n)
     if (constant_learning_rate is True):
@@ -80,14 +80,14 @@ def use_rosenbrock(n,max_L,num_delays,optimizer,constant_learning_rate,print_log
         }
     
     delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays, logging, print_log)
-    return delayer, space_search, -5., 10.
+    return delayer, space_search, -10., 10.
 
 def use_zakharov(n,max_L,num_delays,optimizer,constant_learning_rate,print_log):
     logging = False
     if (print_log is True):
         logging = True
     np.random.seed(12)
-    x_init = np.random.uniform(-5.,10.,n)
+    x_init = np.random.uniform(-10.,10.,n)
     loss_function = zakharov_gen(n)
     deriv_loss = zakharov_deriv_gen(n)
     if (constant_learning_rate is True):
@@ -102,7 +102,7 @@ def use_zakharov(n,max_L,num_delays,optimizer,constant_learning_rate,print_log):
         }
     
     delayer = Delayer(n, optimizer, loss_function, deriv_loss, x_init, max_L, num_delays, logging, print_log)
-    return delayer, space_search, -5., 10.
+    return delayer, space_search, -10., 10.
 
 def test_builder(args):
      #first define the optimizer
