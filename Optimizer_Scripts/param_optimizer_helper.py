@@ -70,7 +70,7 @@ def use_rosenbrock(n,max_L,num_delays,optimizer,constant_learning_rate,print_log
     deriv_loss = rosen_deriv_gen(n)
     if (constant_learning_rate is True):
         space_search = {
-        'learning_rate': hp.uniform('learning_rate', 0.0, 1.5),
+        'learning_rate': hp.uniform('learning_rate', 0.0, 2.0),
         }
     else:
         space_search = {
@@ -92,7 +92,7 @@ def use_zakharov(n,max_L,num_delays,optimizer,constant_learning_rate,print_log):
     deriv_loss = zakharov_deriv_gen(n)
     if (constant_learning_rate is True):
         space_search = {
-        'learning_rate': hp.uniform('learning_rate', 0.0, 1.5),
+        'learning_rate': hp.uniform('learning_rate', 0.0, 2.0),
         }
     else:
         space_search = {
