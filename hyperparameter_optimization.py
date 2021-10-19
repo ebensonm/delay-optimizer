@@ -26,7 +26,8 @@ def main(**args):
             arg_dict  = args.copy()
             arg_dict['best_params'] = best_params
             arg_dict['test_time'] = np.round(end-start,3)
-            arg_dict['best_params']['step_size'] = int(arg_dict['best_params']['step_size'])
+            if arg_dict['constant_learning_rate'] is False:
+                arg_dict['best_params']['step_size'] = int(arg_dict['best_params']['step_size'])
             arg_dict['best_params']['best_loss'] = best_loss
             arg_dict['percent_converge'] = final_sum[arg_min]
             arg_dict['num_initial_values'] = COMM.size*arg_dict['num_test_initials']
