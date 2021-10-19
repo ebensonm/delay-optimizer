@@ -160,7 +160,7 @@ class Delayer:
         
         
     def compute_time_series(self, tol=1e-10, maxiter=5000, use_delays=False, random=True, symmetric_delays=True,
-                            D=[0], shrink=False, save_time_series=True):
+                            D=[0], break_opt=True, shrink=False, save_time_series=True):
         """computes the time series using the passed Optimizer from __init__, saves convergence
            and time_series (if specified) which is an array of the states
            
@@ -204,7 +204,8 @@ class Delayer:
                 pbar.update(1)      
             if (np.linalg.norm(x_state_new - x_state_old) < tol):  #stopping condition
                 conv_bool = True
-                break  
+                if (break_opt is True):
+                    break  
         if (self.print_log is True):  #close the tqdm tracking bar
             pbar.close()    
         #save algorithm variables        

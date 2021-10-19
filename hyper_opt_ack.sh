@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 
 #SBATCH --time=12:00:00   # walltime
 #SBATCH --ntasks=50   # number of processor cores (i.e. tasks)
@@ -7,7 +7,6 @@
 #SBATCH -J  "AckDel"   # job name
 
 #load the modules
-module load python/3.8
 module load miniconda3/4.6
 module load mpi/openmpi-1.10.7_gnu4.8.5
 source activate HyperOpt
