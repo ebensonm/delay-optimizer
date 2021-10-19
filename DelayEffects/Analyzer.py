@@ -95,27 +95,42 @@ class Analyzer:
         """
         if self.loss_name == 'Rosenbrock':
             if self.n == 2:
-                self.params = {'step_size': 1800, 'min_learning_rate': 0.16862560897303366, 'max_learning_rate': 3.3025870984923507}
+                self.params = {'step_size': 1800, 'min_learning_rate': 0.16862560897303366, 'max_learning_rate':  3.3025870984923507}
                 self.del_params = {'step_size': 100, 'min_learning_rate': 0.5427218194366088, 'max_learning_rate': 2.917445299778115}
             elif self.n == 10:
-                self.params = {'step_size': 1600, 'min_learning_rate': 0.9425853633084775, 'max_learning_rate': 3.1905492723385143}
-                self.del_params = {'step_size': 200, 'min_learning_rate': 0.18512048918979307, 'max_learning_rate': 1.5027247903112873}
+                self.params = {'step_size': 1800, 'min_learning_rate': 0.8007229432536243, 'max_learning_rate': 2.2449481296632032}
+                self.del_params = {'step_size': 1600, 'min_learning_rate': 0.1063467709571041, 'max_learning_rate': 2.013029349056361}
             elif self.n == 100:
-                self.params = {'step_size': 2300, 'min_learning_rate': 0.40548487960979646, 'max_learning_rate': 1.9085947512862216}
-                self.del_params = {'step_size': 400, 'min_learning_rate': 0.4935214423270968, 'max_learning_rate': 2.2930490001784753}
+                self.params = {'step_size': 1700, 'min_learning_rate': 0.517023608040682, 'max_learning_rate': 2.663301806828187}
+                self.del_params = {'step_size': 1700, 'min_learning_rate': 0.6663565546501306, 'max_learning_rate': 1.542771215892512}
             elif self.n == 1000:
                 self.params = {'step_size': 1900, 'min_learning_rate': 0.7913344486193052, 'max_learning_rate': 3.153253937908706}
                 self.del_params = {'step_size': 2200, 'min_learning_rate': 0.3938785608353136, 'max_learning_rate': 1.9686044621631718}
             elif self.n == 10000:
                 self.params = {'step_size': 200, 'min_learning_rate': 0.051169248252087185, 'max_learning_rate': 2.52094246796635}
-                self.del_params = {'step_size': 900, 'min_learning_rate': 0.027635565134123685, 'max_learning_rate': 3.6307240705493578}
+                self.del_params = {'step_size': 2000, 'min_learning_rate': 0.3531031777251941, 'max_learning_rate': 2.8043327181669144}
             else:
-                self.params = {'step_size': 740, 'min_learning_rate': 0.23, 'max_learning_rate': 2.98}
-                self.del_params = self.params
+                self.params = {'step_size': 2000, 'min_learning_rate': 0.5, 'max_learning_rate': 3.0}
+                self.del_params = {'step_size': 1800, 'min_learning_rate': 0.5, 'max_learning_rate': 2.0}
         elif self.loss_name == 'Zakharov':
-            # TODO get Zakharov optimal params and add them
-            self.params = {'step_size': 740, 'min_learning_rate': 0.23, 'max_learning_rate': 2.98}
-            self.del_params = self.params
+            if self.n == 2:
+                self.params = {'step_size': 1600, 'min_learning_rate': 0.820160859068515, 'max_learning_rate': 2.621539273761733}
+                self.del_params = {'step_size': 600, 'min_learning_rate': 0.9002716481735573, 'max_learning_rate': 3.9453205411254526}
+            elif self.n == 10:
+                self.params = {'step_size': 1300, 'min_learning_rate': 0.8755669260416792, 'max_learning_rate': 2.0703992165503715}
+                self.del_params = {'step_size': 1100, 'min_learning_rate': 0.5981517265695458, 'max_learning_rate': 1.7721689810132744}
+            elif self.n == 100:
+                self.params = {'step_size': 500, 'min_learning_rate': 0.08078391698353116, 'max_learning_rate': 3.049427241295275}
+                self.del_params = {'step_size': 900, 'min_learning_rate': 0.5920671826485262, 'max_learning_rate': 3.7103587561074676}
+            elif self.n == 1000:
+                self.params = {'step_size': 800, 'min_learning_rate': 0.2328851755973872, 'max_learning_rate': 3.3296254127502167}
+                self.del_params = {'step_size': 900, 'min_learning_rate': 0.5882282586803385, 'max_learning_rate': 3.5049523306448735}
+            elif self.n == 10000:
+                self.params = {'step_size': 200, 'min_learning_rate': 0.7746451422263353, 'max_learning_rate': 2.580862669000447}
+                self.del_params = {'step_size': 400, 'min_learning_rate': 0.46155695597287816, 'max_learning_rate': 1.5510060856536165}
+            else:
+                self.params = {'step_size': 500, 'min_learning_rate': 0.7, 'max_learning_rate': 2.6}
+                self.del_params = {'step_size': 1000, 'min_learning_rate': 0.5, 'max_learning_rate': 3.0}
         else:
             self.params = {'step_size': 740, 'min_learning_rate': 0.23, 'max_learning_rate': 2.98}
             self.del_params = self.params
@@ -144,7 +159,7 @@ class Analyzer:
                                        save_grad=self.save_grad)
             
             
-    def initialize_points(self, num_points, sample, points=None):
+    def initialize_points(self, num_points, sample, points=None, create_mesh=True):
         """Initialize the initial points for the optimization.
         
         Parameters:
@@ -162,7 +177,7 @@ class Analyzer:
         if sample == 'random':
             self.x_inits = np.random.uniform(self.range_grid[0], self.range_grid[1], size=(num_points,self.n))
         elif sample == 'grid':
-            self.x_inits, self.grid = self.create_grid(num_points)
+            self.x_inits, self.grid = self.create_grid(num_points, create_mesh)
         elif sample == 'same':
             xint = np.random.uniform(self.range_grid[0], self.range_grid[1], size=self.n)
             self.x_inits = np.tile(xint, (num_points, 1))
@@ -174,7 +189,7 @@ class Analyzer:
             raise ValueError("Test type '{}' does not exist.".format(sample))
     
     
-    def create_grid(self, num_points):
+    def create_grid(self, num_points, create_mesh=True):
         """Helper function used to initialize an evenly spaced grid of initial points.
         
         Parameters:
@@ -194,11 +209,10 @@ class Analyzer:
             x_inits.append(point)
         x_inits = np.asarray(x_inits)
         
-        if self.n == 2:
+        if create_mesh is True:
             X, Y = np.meshgrid(x, x)
             grid = [X, Y]
-        else:
-            grid = None
+        
         return x_inits, grid
     
             
@@ -371,7 +385,7 @@ class Analyzer:
     
     def set_bounds(self, values, time_plot):
         """Computes and returns the vmax and vmin values for plotting."""
-        vmax, vmin = max(max(values)), min(min(values))
+        vmax, vmin = np.nanmax(np.nanmax(values)), np.nanmin(np.nanmin(values))
         if vmin > 0 or time_plot is True:
             vmin = 0
         return vmax, vmin
@@ -405,7 +419,7 @@ class Analyzer:
                contour_plot(bool) - whether to plot the contour of the function on top of the plot
                                     [basin]
                include_exteriors(bool) - whether to plot the values for points that did not converge
-                                         [basin]
+                                         [basin, iters only]
         """
         # Error checker
         if delayed not in ('both', True, False):
@@ -521,13 +535,13 @@ class Analyzer:
             # Check that points were computed as a grid
             if self.grid is None:
                 raise ValueError("Basin plot type is only compatible with 'grid' test type.")
-                
+            
             # Check that function is 2D
             if self.n != 2:
-                raise ValueError("Basin plot type is only compatible with functions of dimension 2.")
+                raise NotImplementedError("Basin plot type is only implemented for functions of dimension 2.")
             
             if delayed == 'both':
-                fig, ax = plt.subplots(2, 1, figsize=(10,16))
+                fig, ax = plt.subplots(1, 2, figsize=(20,8))
                 final_values, type_str = self.extract_values(False, focus)[1:]
                 del_final_values = self.extract_values(True, focus)[1]
                 num_points = len(self.x_inits)
@@ -536,7 +550,7 @@ class Analyzer:
                 Z, del_Z = np.zeros(num_points), np.zeros(num_points)
                 for i in range(num_points):
                     Z[i], del_Z[i] = final_values[i], del_final_values[i]
-                    if include_exteriors is False:    # Do not include points that did not converge
+                    if include_exteriors is False and focus == 'iters':    # Don't include points that didn't converge
                         if self.conv[i] is False:  
                             Z[i] = np.nan
                         if self.del_conv[i] is False:
@@ -545,12 +559,13 @@ class Analyzer:
                 Z = np.resize(Z, (len(X),len(Y))).T
                 del_Z = np.resize(del_Z, (len(X),len(Y))).T
                 ax[0].patch.set_color('.25')
-                im0 = ax[0].contourf(X, Y, Z, cmap=cmap)
+                vmax, vmin = self.set_bounds(np.stack([Z,del_Z]), False)
+                im0 = ax[0].contourf(X, Y, Z, cmap=cmap, vmin=vmin, vmax=vmax)
                 ax[0].set_xlabel("Dimension 0")
                 ax[0].set_ylabel("Dimension 1")
                 ax[0].set_title("Undelayed")
                 ax[1].patch.set_color('.25')
-                im1 = ax[1].contourf(X, Y, del_Z, cmap=cmap)
+                im1 = ax[1].contourf(X, Y, del_Z, cmap=cmap, vmin=vmin, vmax=vmax)
                 ax[1].set_xlabel("Dimension 0")
                 ax[1].set_ylabel("Dimension 1")
                 ax[1].set_title("Delayed")
@@ -573,31 +588,66 @@ class Analyzer:
                     ax[1].contour(X, Y, Z, locator=ticker.LogLocator(), cmap=cmap2)
                 
             else:
-                fig, ax = plt.subplots(1, 1, figsize=(10,8))
-                final_values, type_str = self.extract_values(delayed, focus)[1:]
+                # Initialize values and the figure
+                num_plots = len(plot_dims)
                 num_points = len(self.x_inits)
                 X, Y = self.grid
+                fig, ax = plt.subplots(num_plots, 1, figsize=(10,8*(num_plots)))
+                if type(ax) is not np.ndarray:
+                    ax = np.array([ax])    # TODO : Make sure that casting as an array doesnt create problems
+                    
+                if focus in ['loss','grad']:    # Always include exteriors for loss and gradient
+                    include_exteriors = True
                 
-                Z = np.zeros(num_points)
-                for i in range(num_points):
-                    Z[i] = final_values[i]
-                    if include_exteriors is False:    # Do not include points that did not converge
-                        if delayed is True:
-                            if self.del_conv[i] is False:  
-                                Z[i] = np.nan
-                        else:
-                            if self.conv[i] is False:
-                                Z[i] = np.nan
                 
-                Z = np.resize(Z, (len(X),len(Y))).T
-                ax.patch.set_color('.25')
-                im = ax.contourf(X, Y, Z, cmap=cmap)
-                ax.set_xlabel("Dimension 0")
-                ax.set_ylabel("Dimension 1")
+                ## Need to find the indices of points corresponding to each set of dimensions we want to graph
+                final_values, type_str = self.extract_values(delayed, focus)[1:]
                 
-                if colorbar is True:
-                    self.plot_colorbar(fig, ax, im)
                 
+                
+                for j in range(num_plots):
+                    axis = ax[j]
+                    dim_tuple = plot_dims[j]
+                    
+                    Z = np.zeros(num_points)
+                    
+                    
+                    
+                    im = axis.contourf(X, Y, Z, cmap=cmap)
+                        
+                        
+                    if colorbar is True:
+                        self.plot_colorbar(fig, axis, im)
+                    axis.set_xlabel("Dimension {}".format(dim_tuple[0]))
+                    axis.set_ylabel("Dimension {}".format(dim_tuple[1]))
+                    if fixed_limits is True:
+                        axis.set_xlim(self.range_grid)
+                        axis.set_ylim(self.range_grid)
+                
+                
+                
+                
+                for k, axis in enumerate(ax):
+                    Z = np.zeros(num_points)
+                    for i in range(num_points):
+                        Z[i] = final_values[i]
+                        if include_exteriors is False:    # Do not include points that did not converge
+                            if delayed is True:
+                                if self.del_conv[i] is False:  
+                                    Z[i] = np.nan
+                            else:
+                                if self.conv[i] is False:
+                                    Z[i] = np.nan
+                    
+                    Z = np.resize(Z, (len(X),len(Y))).T
+                    axis.patch.set_color('.25')
+                    im = axis.contourf(X, Y, Z, cmap=cmap)
+                    axis.set_xlabel("Dimension {}".format(plot_dims[k][0]))
+                    axis.set_ylabel("Dimension {}".format(plot_dims[k][1]))
+                    
+                    if colorbar is True:
+                        self.plot_colorbar(fig, axis, im)
+                    
                 if contour_plot is True:
                     if num_points < 250:
                         num_points = 250
@@ -615,7 +665,7 @@ class Analyzer:
             
         fig.suptitle(title, size='xx-large')
         fig.tight_layout()
-        fig.subplots_adjust(top=0.95)
+        fig.subplots_adjust(top=0.9)
         plt.show()
         
             
@@ -632,13 +682,12 @@ class Analyzer:
                               cmap, cmap2)
         
         
-    def optimize(self, num_points, sample, delayed, plots=[], points=None, range_grid=None, 
-                 max_L=None, num_delays=None, maxiter=None, tol=None, D=None, random=True, 
-                 break_opt=True, save_state=True, save_loss=True, save_grad=True, save_iters=True, 
-                 num_bins=25, fixed_bins=True, plot_dims=[(0,1)], time_plot=False, colorbar=True,
-                 fixed_limits=True, contour_plot=False, include_exteriors=False, 
-                 cmap='winter', cmap2='autumn', print_loss=True, print_grad=False, 
-                 clear_data=True):
+    def optimize(self, num_points, sample, delayed, plots=[], points=None, create_mesh=True, 
+                 range_grid=None, max_L=None, num_delays=None, maxiter=None, tol=None, D=None, 
+                 random=True, break_opt=True, save_state=True, save_loss=True, save_grad=True, 
+                 save_iters=True, num_bins=25, fixed_bins=True, plot_dims=[(0,1)], time_plot=False, 
+                 colorbar=True, fixed_limits=True, contour_plot=False, include_exteriors=False, 
+                 cmap='winter', cmap2='autumn', print_loss=True, print_grad=False, clear_data=True):
         """Contains all the basic functions of the other major functions. Initializes
         points, computes save values, and plots the data according to the parameters.
         
@@ -652,7 +701,7 @@ class Analyzer:
             clear_data(bool): whether to clear the data at the end
         """
         self.initialize_vars(range_grid=range_grid) # Other values are reinitialized in calculate_save_values
-        self.initialize_points(num_points, sample, points)
+        self.initialize_points(num_points, sample, points, create_mesh)
         self.calculate_save_values(delayed, max_L, num_delays, maxiter, tol, D, random, 
                                    break_opt, save_state, save_loss, save_grad, save_iters)
         self.plot_list(plots, num_bins, fixed_bins, plot_dims, time_plot, colorbar, 
