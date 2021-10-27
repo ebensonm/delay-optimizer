@@ -486,8 +486,8 @@ class Analyzer:
                         data = self.extract_dims(i, dim_tuple, False)
                         del_data = self.extract_dims(i, dim_tuple, True)
                         
-                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=70, vmax=vmax, vmin=vmin)
-                        axis.scatter(del_data[0], del_data[1], c=del_values[i], alpha=alpha, cmap=cmap2, s=70, vmax=del_vmax, vmin=del_vmin)
+                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=20, vmax=vmax, vmin=vmin)
+                        axis.scatter(del_data[0], del_data[1], c=del_values[i], alpha=alpha, cmap=cmap2, s=20, vmax=del_vmax, vmin=del_vmin)
                         if time_plot is True:
                             axis.plot(data[0], data[1], color='b', alpha=0.3)
                             axis.plot(del_data[0], del_data[1], color='r', alpha=0.3)
@@ -511,7 +511,7 @@ class Analyzer:
                     dim_tuple = plot_dims[j]
                     for i in range(len(self.x_inits)):
                         data = self.extract_dims(i, dim_tuple, delayed)
-                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=70, vmax=vmax, vmin=vmin)
+                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=20, vmax=vmax, vmin=vmin)
                         if time_plot is True:
                             axis.plot(data[0], data[1], color=color, alpha=0.3)
                     if colorbar is True:
