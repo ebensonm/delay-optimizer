@@ -264,7 +264,6 @@ class Analyzer:
                                        break_opt, save_state, save_loss, save_grad, save_iters)
             self.calculate_save_values(True, max_L, num_delays, maxiter, tol, D, random, 
                                        break_opt, save_state, save_loss, save_grad, save_iters)
-            
         elif delayed in (True, False):
             # Reset old data
             if delayed is True:
@@ -604,25 +603,23 @@ class Analyzer:
                 final_values, type_str = self.extract_values(delayed, focus)[1:]
                 
                 
-                
-                for j in range(num_plots):
-                    axis = ax[j]
-                    dim_tuple = plot_dims[j]
+                #print(num_points)
+                #for j in range(num_plots):
+                #    axis = ax[j]
+                #    dim_tuple = plot_dims[j]
                     
-                    Z = np.zeros(num_points)
+                #    Z = np.zeros(num_points)
                     
-                    
-                    
-                    im = axis.contourf(X, Y, Z, cmap=cmap)
+                    #im = axis.contourf(X, Y, Z, cmap=cmap)
                         
                         
-                    if colorbar is True:
-                        self.plot_colorbar(fig, axis, im)
-                    axis.set_xlabel("Dimension {}".format(dim_tuple[0]))
-                    axis.set_ylabel("Dimension {}".format(dim_tuple[1]))
-                    if fixed_limits is True:
-                        axis.set_xlim(self.range_grid)
-                        axis.set_ylim(self.range_grid)
+                #    if colorbar is True:
+                #        self.plot_colorbar(fig, axis, im)
+                #    axis.set_xlabel("Dimension {}".format(dim_tuple[0]))
+                #    axis.set_ylabel("Dimension {}".format(dim_tuple[1]))
+                #    if fixed_limits is True:
+                #        axis.set_xlim(self.range_grid)
+                #        axis.set_ylim(self.range_grid)
                 
                 
                 
