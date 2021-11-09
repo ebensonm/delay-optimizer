@@ -1,0 +1,32 @@
+{
+    "dim": 2,
+    "max_L": 1,
+    "num_delays": 1000,
+    "use_delays": false,
+    "maxiter": 3000,
+    "optimizer_name": "Adam",
+    "loss_name": "Zakharov",
+    "tol": 1e-05,
+    "max_evals": 200,
+    "symmetric_delays": true,
+    "constant_learning_rate": false,
+    "num_tests": 5,
+    "filename": "Zak_2d",
+    "num_test_initials": 5,
+    "print_log": false,
+    "vary_percent": 0.1,
+    "hyper_minimize": "loss",
+    "clip_grad": false,
+    "clip_val": 1.0,
+    "min_val": -10.0,
+    "max_val": 10.0,
+    "best_params": {
+        "max_learning_rate": 3.6615079051233956,
+        "min_learning_rate": 0.4340228200928185,
+        "step_size": 800,
+        "best_loss": 2.3639602377052586e-07
+    },
+    "test_time": 79.612,
+    "percent_converge": 1.0,
+    "num_initial_values": 250
+}
