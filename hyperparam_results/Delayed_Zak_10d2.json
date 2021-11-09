@@ -21,12 +21,12 @@
     "min_val": -10.0,
     "max_val": 10.0,
     "best_params": {
-        "max_learning_rate": 3.1011405378340737,
-        "min_learning_rate": 0.9922124321080038,
+        "max_learning_rate": 2.858407358537467,
+        "min_learning_rate": 0.3928823446886825,
         "step_size": 1000,
-        "best_loss": 166.82497054457124
+        "best_loss": 160.2621218607451
     },
-    "test_time": 348.796,
-    "percent_converge": 0.144,
+    "test_time": 373.696,
+    "percent_converge": 0.212,
     "num_initial_values": 250
 }
