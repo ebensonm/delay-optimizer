@@ -1,9 +1,11 @@
 # Analyzer.py 
 
 import numpy as np
+import pandas as pd
 import itertools
 from matplotlib import pyplot as plt
 from matplotlib import ticker
+import matplotlib as mpl
 from Optimizer_Scripts.learning_rate_generator import generate_learning_rates
 from Optimizer_Scripts import Delayer
 from Optimizer_Scripts import optimizers 
@@ -14,14 +16,16 @@ class Analyzer:
     Includes functions to calculate the time series, loss values, and gradient 
     values over time, and to graph plots of that data
     """
-    def __init__(self, n, loss_name, optimizer_name='Adam', max_L=1, num_delays=1000, 
-                 maxiter=2000, tol=1e-5, compute_loss=True, save_grad=True):
+    def __init__(self, n, loss_name, optimizer_name='Adam', const_lr=False, 
+                 max_L=1, num_delays=1000, maxiter=2000, tol=1e-5, 
+                 compute_loss=True, save_grad=True):
         """The initializer for the Helper class.
             
            Parameters: 
                n(int): the dimension of the state vector
                loss_name(str): name of the loss function to be analyzed
                optimizer_name(str): name of the optimization algorithm to be used
+               const_lr (bool): whether to use a constant learning rate
                max_L(int): the maximum delay of the system
                num_delays(int): the number of delays to compute with the system
                maxiter(int): the maximum number of iterations in the system
@@ -33,6 +37,7 @@ class Analyzer:
         self.n = n
         self.loss_name = loss_name
         self.optimizer_name = optimizer_name
+        self.const_lr = const_lr
         self.initialize_functions()
         self.initialize_params()
         self.max_L = max_L
@@ -93,47 +98,33 @@ class Analyzer:
     def initialize_params(self):
         """Set the delayed and undelayed optimal parameters closest to those computed.
         """
-        if self.loss_name == 'Rosenbrock':
-            if self.n == 2:
-                self.params = {'step_size': 1800, 'min_learning_rate': 0.16862560897303366, 'max_learning_rate':  3.3025870984923507}
-                self.del_params = {'step_size': 100, 'min_learning_rate': 0.5427218194366088, 'max_learning_rate': 2.917445299778115}
-            elif self.n == 10:
-                self.params = {'step_size': 1800, 'min_learning_rate': 0.8007229432536243, 'max_learning_rate': 2.2449481296632032}
-                self.del_params = {'step_size': 1600, 'min_learning_rate': 0.1063467709571041, 'max_learning_rate': 2.013029349056361}
-            elif self.n == 100:
-                self.params = {'step_size': 1700, 'min_learning_rate': 0.517023608040682, 'max_learning_rate': 2.663301806828187}
-                self.del_params = {'step_size': 1700, 'min_learning_rate': 0.6663565546501306, 'max_learning_rate': 1.542771215892512}
-            elif self.n == 1000:
-                self.params = {'step_size': 1900, 'min_learning_rate': 0.7913344486193052, 'max_learning_rate': 3.153253937908706}
-                self.del_params = {'step_size': 2200, 'min_learning_rate': 0.3938785608353136, 'max_learning_rate': 1.9686044621631718}
-            elif self.n == 10000:
-                self.params = {'step_size': 200, 'min_learning_rate': 0.051169248252087185, 'max_learning_rate': 2.52094246796635}
-                self.del_params = {'step_size': 2000, 'min_learning_rate': 0.3531031777251941, 'max_learning_rate': 2.8043327181669144}
-            else:
-                self.params = {'step_size': 2000, 'min_learning_rate': 0.5, 'max_learning_rate': 3.0}
-                self.del_params = {'step_size': 1800, 'min_learning_rate': 0.5, 'max_learning_rate': 2.0}
-        elif self.loss_name == 'Zakharov':
-            if self.n == 2:
-                self.params = {'step_size': 1600, 'min_learning_rate': 0.820160859068515, 'max_learning_rate': 2.621539273761733}
-                self.del_params = {'step_size': 600, 'min_learning_rate': 0.9002716481735573, 'max_learning_rate': 3.9453205411254526}
-            elif self.n == 10:
-                self.params = {'step_size': 1300, 'min_learning_rate': 0.8755669260416792, 'max_learning_rate': 2.0703992165503715}
-                self.del_params = {'step_size': 1100, 'min_learning_rate': 0.5981517265695458, 'max_learning_rate': 1.7721689810132744}
-            elif self.n == 100:
-                self.params = {'step_size': 500, 'min_learning_rate': 0.08078391698353116, 'max_learning_rate': 3.049427241295275}
-                self.del_params = {'step_size': 900, 'min_learning_rate': 0.5920671826485262, 'max_learning_rate': 3.7103587561074676}
-            elif self.n == 1000:
-                self.params = {'step_size': 800, 'min_learning_rate': 0.2328851755973872, 'max_learning_rate': 3.3296254127502167}
-                self.del_params = {'step_size': 900, 'min_learning_rate': 0.5882282586803385, 'max_learning_rate': 3.5049523306448735}
-            elif self.n == 10000:
-                self.params = {'step_size': 200, 'min_learning_rate': 0.7746451422263353, 'max_learning_rate': 2.580862669000447}
-                self.del_params = {'step_size': 400, 'min_learning_rate': 0.46155695597287816, 'max_learning_rate': 1.5510060856536165}
-            else:
-                self.params = {'step_size': 500, 'min_learning_rate': 0.7, 'max_learning_rate': 2.6}
-                self.del_params = {'step_size': 1000, 'min_learning_rate': 0.5, 'max_learning_rate': 3.0}
+        # Get the data we need
+        hyperparams = pd.read_csv('../best_hyperparams.csv')
+        params = hyperparams[hyperparams["loss_name"] == self.loss_name]
+        params = params[params["dim"] == self.n]
+        #params = params[params["max_L"] == self.max_L]
+        params = params[params["optimizer_name"] == self.optimizer_name]
+        params = params[params["constant_learning_rate"] == self.const_lr]
+        
+        # Extract and organize the values we need
+        params = params[["use_delays", "step_size", "min_learning_rate", 
+                         "max_learning_rate"]]
+        del_params = params[params["use_delays"] == True].drop(columns="use_delays").to_dict('index').values()
+        params = params[params["use_delays"] == False].drop(columns="use_delays").to_dict('index').values()
+        
+        # Set undelayed params
+        if len(list(params)) == 0:
+            self.params = {'step_size': 740., 'min_learning_rate': 0.23, 
+                               'max_learning_rate': 2.98}
         else:
-            self.params = {'step_size': 740, 'min_learning_rate': 0.23, 'max_learning_rate': 2.98}
-            self.del_params = self.params
+            self.params = list(params)[0]
+            
+        # Set undelayed params
+        if len(list(del_params)) == 0:
+            self.del_params = {'step_size': 740., 'min_learning_rate': 0.23, 
+                               'max_learning_rate': 2.98}
+        else:
+            self.del_params = list(del_params)[0]
         
         
     def initialize_optimizer(self, delayed, beta_1=0.9, beta_2=0.999):
@@ -159,7 +150,7 @@ class Analyzer:
                                        save_grad=self.save_grad)
             
             
-    def initialize_points(self, num_points, sample, points=None, create_mesh=True):
+    def initialize_points(self, num_points, sample, points=None):
         """Initialize the initial points for the optimization.
         
         Parameters:
@@ -177,7 +168,7 @@ class Analyzer:
         if sample == 'random':
             self.x_inits = np.random.uniform(self.range_grid[0], self.range_grid[1], size=(num_points,self.n))
         elif sample == 'grid':
-            self.x_inits, self.grid = self.create_grid(num_points, create_mesh)
+            self.x_inits, self.grid = self.create_grid(num_points)
         elif sample == 'same':
             xint = np.random.uniform(self.range_grid[0], self.range_grid[1], size=self.n)
             self.x_inits = np.tile(xint, (num_points, 1))
@@ -189,7 +180,7 @@ class Analyzer:
             raise ValueError("Test type '{}' does not exist.".format(sample))
     
     
-    def create_grid(self, num_points, create_mesh=True):
+    def create_grid(self, num_points):
         """Helper function used to initialize an evenly spaced grid of initial points.
         
         Parameters:
@@ -209,9 +200,8 @@ class Analyzer:
             x_inits.append(point)
         x_inits = np.asarray(x_inits)
         
-        if create_mesh is True:
-            X, Y = np.meshgrid(x, x)
-            grid = [X, Y]
+        X, Y = np.meshgrid(x, x)
+        grid = [X, Y]
         
         return x_inits, grid
     
@@ -397,9 +387,9 @@ class Analyzer:
         
             
     def plot_results(self, delayed, type_plot, focus, num_bins=25, fixed_bins=True, 
-                     plot_dims=[(0,1)], time_plot=False, colorbar=True, fixed_limits=True, 
+                     plot_dims=[(0,1)], time_plot=False, colorbar=True,
                      contour_plot=False, include_exteriors=False, cmap='winter', 
-                     cmap2='autumn', title=None):
+                     cmap2='autumn', bounds=None, title=None):
         """Plot the previously computed results.
          
            Parameters: 
@@ -413,12 +403,11 @@ class Analyzer:
                                   histograms [finals]
                plot_dims(list(tuples)) - the list of dimensions to plot against each other [path]
                time_plot(bool) - whether to plot the time series of each point [path]
-               fixed_limits(bool) - whether to fix the limits of the graph to the range_grid or
-                                    let the program pick its own limits [path]
                contour_plot(bool) - whether to plot the contour of the function on top of the plot
                                     [basin]
                include_exteriors(bool) - whether to plot the values for points that did not converge
                                          [basin, iters only]
+               bounds(list): left and right limits of the plot in each dimension
         """
         # Error checker
         if delayed not in ('both', True, False):
@@ -427,6 +416,9 @@ class Analyzer:
             raise ValueError("Plot type '{}' does not exist.".format(type_plot))
         if focus not in ('state', 'loss', 'grad', 'iters'):
             raise ValueError("Plot focus must be 'state', 'loss', 'grad', or 'iters', not {}.".format(focus))
+            
+        if bounds is None:
+                bounds = self.range_grid
         
         if type_plot == 'finals':
             # Initialize for the histogram
@@ -486,8 +478,8 @@ class Analyzer:
                         data = self.extract_dims(i, dim_tuple, False)
                         del_data = self.extract_dims(i, dim_tuple, True)
                         
-                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=20, vmax=vmax, vmin=vmin)
-                        axis.scatter(del_data[0], del_data[1], c=del_values[i], alpha=alpha, cmap=cmap2, s=20, vmax=del_vmax, vmin=del_vmin)
+                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=20, norm=mpl.colors.LogNorm())
+                        axis.scatter(del_data[0], del_data[1], c=del_values[i], alpha=alpha, cmap=cmap2, s=20, norm=mpl.colors.LogNorm())
                         if time_plot is True:
                             axis.plot(data[0], data[1], color='b', alpha=0.3)
                             axis.plot(del_data[0], del_data[1], color='r', alpha=0.3)
@@ -495,9 +487,9 @@ class Analyzer:
                         self.plot_colorbar(fig, axis, im)
                     axis.set_xlabel("Dimension {}".format(dim_tuple[0]))
                     axis.set_ylabel("Dimension {}".format(dim_tuple[1]))
-                    if fixed_limits is True:
-                        axis.set_xlim(self.range_grid)
-                        axis.set_ylim(self.range_grid)
+                    axis.set_xlim(bounds)
+                    axis.set_ylim(bounds)
+                    
             else:
                 values, final_values, type_str = self.extract_values(delayed, focus)
                 vmax, vmin = self.set_bounds(values, time_plot)
@@ -511,18 +503,16 @@ class Analyzer:
                     dim_tuple = plot_dims[j]
                     for i in range(len(self.x_inits)):
                         data = self.extract_dims(i, dim_tuple, delayed)
-                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=20, vmax=vmax, vmin=vmin)
+                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=20, norm=mpl.colors.LogNorm())
                         if time_plot is True:
                             axis.plot(data[0], data[1], color=color, alpha=0.3)
                     if colorbar is True:
                         self.plot_colorbar(fig, axis, im)
                     axis.set_xlabel("Dimension {}".format(dim_tuple[0]))
                     axis.set_ylabel("Dimension {}".format(dim_tuple[1]))
-                    if fixed_limits is True:
-                        axis.set_xlim(self.range_grid)
-                        axis.set_ylim(self.range_grid)
+                    axis.set_xlim(bounds)
+                    axis.set_ylim(bounds)
                         
-            
             if title is None:
                 title = "Path Tracker on the {} function of {} dimensions".format(self.loss_name, self.n)
                     
@@ -563,11 +553,15 @@ class Analyzer:
                 ax[0].set_xlabel("Dimension 0")
                 ax[0].set_ylabel("Dimension 1")
                 ax[0].set_title("Undelayed")
+                ax[0].set_xlim(bounds)
+                ax[0].set_ylim(bounds)
                 ax[1].patch.set_color('.25')
                 im1 = ax[1].contourf(X, Y, del_Z, cmap=cmap, vmin=vmin, vmax=vmax)
                 ax[1].set_xlabel("Dimension 0")
                 ax[1].set_ylabel("Dimension 1")
                 ax[1].set_title("Delayed")
+                ax[1].set_xlim(bounds)
+                ax[1].set_ylim(bounds)
                 
                 if colorbar is True:
                     self.plot_colorbar(fig, ax[0], im0)
@@ -641,6 +635,8 @@ class Analyzer:
                     im = axis.contourf(X, Y, Z, cmap=cmap)
                     axis.set_xlabel("Dimension {}".format(plot_dims[k][0]))
                     axis.set_ylabel("Dimension {}".format(plot_dims[k][1]))
+                    axis.set_xlim(bounds)
+                    axis.set_ylim(bounds)
                     
                     if colorbar is True:
                         self.plot_colorbar(fig, axis, im)
@@ -684,7 +680,8 @@ class Analyzer:
                  random=True, break_opt=True, save_state=True, save_loss=True, save_grad=True, 
                  save_iters=True, num_bins=25, fixed_bins=True, plot_dims=[(0,1)], time_plot=False, 
                  colorbar=True, fixed_limits=True, contour_plot=False, include_exteriors=False, 
-                 cmap='winter', cmap2='autumn', print_loss=True, print_grad=False, clear_data=True):
+                 cmap='winter', cmap2='autumn', bounds=None, print_loss=True, print_grad=False, 
+                 clear_data=True):
         """Contains all the basic functions of the other major functions. Initializes
         points, computes save values, and plots the data according to the parameters.
         
@@ -701,8 +698,9 @@ class Analyzer:
         self.initialize_points(num_points, sample, points, create_mesh)
         self.calculate_save_values(delayed, max_L, num_delays, maxiter, tol, D, random, 
                                    break_opt, save_state, save_loss, save_grad, save_iters)
-        self.plot_list(plots, num_bins, fixed_bins, plot_dims, time_plot, colorbar, 
-                       fixed_limits, contour_plot, include_exteriors, cmap, cmap2)
+        self.plot_list(plots, num_bins, fixed_bins, plot_dims, time_plot, 
+                       colorbar, fixed_limits, contour_plot, include_exteriors, 
+                       cmap, cmap2, bounds)
         
         if print_loss is True:
             self.print_loss(delayed)
