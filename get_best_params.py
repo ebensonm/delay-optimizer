@@ -6,6 +6,7 @@ bases comparisons on the "filename" parameter.
 """
 
 import pandas as pd
+import numpy as np
 
 # Read the data
 csv_name = "best_hyperparams.csv"
@@ -15,6 +16,10 @@ types = data.groupby("filename")        # Group the data
 best_ind = []
 for group in list(types.groups):
     # Get the indices of the trials with the best loss values
+    index = types.get_group(group)["best_loss"].idxmin()
+    if np.isnan(index):
+        print("Failed:", index)
+        
     best_ind.append(types.get_group(group)["best_loss"].idxmin())
     
 # Convert to .csv that can be read by the Analyzer class
