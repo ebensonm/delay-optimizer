@@ -7,6 +7,9 @@ if python add_hyperparam_data.py $1; then
     echo "Sorting hyperparameters..."
     python get_best_params.py
     echo "Best hyperparameters written to best_hyperparams.csv."
+    echo "Sorting data..."
+    python sort_param_data.py
+    echo "Data sorted."
     echo "Moving .json files to folder..."
     mv $1*.json hyperparam_results/
     echo "Files moved successfully."
