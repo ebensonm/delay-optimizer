@@ -1,0 +1,30 @@
+{
+    "dim": 100,
+    "max_L": 5,
+    "num_delays": 1000,
+    "use_delays": false,
+    "maxiter": 3000,
+    "optimizer_name": "Adam",
+    "loss_name": "Rosenbrock",
+    "tol": 1e-05,
+    "max_evals": 200,
+    "symmetric_delays": true,
+    "constant_learning_rate": true,
+    "num_tests": 5,
+    "filename": "Const_Rosen_100d_5L",
+    "num_test_initials": 100,
+    "print_log": false,
+    "vary_percent": 0.1,
+    "hyper_minimize": "loss",
+    "clip_grad": false,
+    "clip_val": 1.0,
+    "min_val": -10.0,
+    "max_val": 10.0,
+    "best_params": {
+        "learning_rate": 0.6852199545753191,
+        "best_loss": 249.78850657745136
+    },
+    "test_time": 7238.601,
+    "percent_converge": 0.0012,
+    "num_initial_values": 5000
+}

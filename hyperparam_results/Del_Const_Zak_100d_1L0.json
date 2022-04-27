@@ -1,0 +1,30 @@
+{
+    "dim": 100,
+    "max_L": 1,
+    "num_delays": 1000,
+    "use_delays": true,
+    "maxiter": 3000,
+    "optimizer_name": "Adam",
+    "loss_name": "Zakharov",
+    "tol": 1e-05,
+    "max_evals": 200,
+    "symmetric_delays": true,
+    "constant_learning_rate": true,
+    "num_tests": 5,
+    "filename": "Del_Const_Zak_100d_1L",
+    "num_test_initials": 100,
+    "print_log": false,
+    "vary_percent": 0.1,
+    "hyper_minimize": "loss",
+    "clip_grad": false,
+    "clip_val": 1.0,
+    "min_val": -10.0,
+    "max_val": 10.0,
+    "best_params": {
+        "learning_rate": 0.5842508742326222,
+        "best_loss": 7664.319607303107
+    },
+    "test_time": 5795.849,
+    "percent_converge": 0.943,
+    "num_initial_values": 5000
+}

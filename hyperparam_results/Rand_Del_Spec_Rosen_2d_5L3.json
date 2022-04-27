@@ -1,0 +1,32 @@
+{
+    "dim": 2,
+    "max_L": 5,
+    "num_delays": 1000,
+    "use_delays": true,
+    "maxiter": 3000,
+    "optimizer_name": "Adam",
+    "loss_name": "Rosenbrock",
+    "tol": 1e-05,
+    "max_evals": 200,
+    "symmetric_delays": true,
+    "constant_learning_rate": false,
+    "num_tests": 5,
+    "filename": "Rand_Del_Spec_Rosen_2d_5L",
+    "num_test_initials": 100,
+    "print_log": false,
+    "vary_percent": 0.1,
+    "hyper_minimize": "loss",
+    "clip_grad": false,
+    "clip_val": 1.0,
+    "min_val": -10.0,
+    "max_val": 10.0,
+    "best_params": {
+        "max_learning_rate": 3.1375309892606906,
+        "min_learning_rate": 0.3516891617837561,
+        "step_size": 1130,
+        "best_loss": 4.932469366931261
+    },
+    "test_time": 3252.166,
+    "percent_converge": 0.8224,
+    "num_initial_values": 5000
+}

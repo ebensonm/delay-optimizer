@@ -1,0 +1,32 @@
+{
+    "dim": 2,
+    "max_L": 2,
+    "num_delays": 1000,
+    "use_delays": false,
+    "maxiter": 3000,
+    "optimizer_name": "Adam",
+    "loss_name": "Rosenbrock",
+    "tol": 1e-05,
+    "max_evals": 200,
+    "symmetric_delays": true,
+    "constant_learning_rate": false,
+    "num_tests": 5,
+    "filename": "Rosen_2d_2L",
+    "num_test_initials": 100,
+    "print_log": false,
+    "vary_percent": 0.1,
+    "hyper_minimize": "loss",
+    "clip_grad": false,
+    "clip_val": 1.0,
+    "min_val": -10.0,
+    "max_val": 10.0,
+    "best_params": {
+        "max_learning_rate": 2.233679191567322,
+        "min_learning_rate": 0.5012879347349555,
+        "step_size": 1500,
+        "best_loss": 0.6313520020312333
+    },
+    "test_time": 5070.115,
+    "percent_converge": 0.441,
+    "num_initial_values": 5000
+}
