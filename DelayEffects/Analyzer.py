@@ -4,6 +4,7 @@ import numpy as np
 import itertools
 from matplotlib import pyplot as plt
 from matplotlib import ticker
+from matplotlib.colors import LogNorm
 from Optimizer_Scripts.learning_rate_generator import generate_learning_rates
 from Optimizer_Scripts import Delayer
 from Optimizer_Scripts import optimizers 
@@ -399,7 +400,7 @@ class Analyzer:
     def plot_results(self, delayed, type_plot, focus, num_bins=25, fixed_bins=True, 
                      plot_dims=[(0,1)], time_plot=False, colorbar=True, fixed_limits=True, 
                      contour_plot=False, include_exteriors=False, cmap='winter', 
-                     cmap2='autumn', title=None):
+                     cmap2='viridis', title=None):
         """Plot the previously computed results.
          
            Parameters: 
@@ -472,7 +473,6 @@ class Analyzer:
             if type(ax) is not np.ndarray:
                 ax = np.array([ax])
             alpha = 0.01
-            
             if delayed == 'both':
                 values, final_values, type_str = self.extract_values(False, focus)
                 del_values, del_final_values = self.extract_values(True, focus)[:2]
@@ -485,9 +485,8 @@ class Analyzer:
                     for i in range(len(self.x_inits)):
                         data = self.extract_dims(i, dim_tuple, False)
                         del_data = self.extract_dims(i, dim_tuple, True)
-                        
-                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=20, vmax=vmax, vmin=vmin)
-                        axis.scatter(del_data[0], del_data[1], c=del_values[i], alpha=alpha, cmap=cmap2, s=20, vmax=del_vmax, vmin=del_vmin)
+                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=0.1, vmax=vmax, vmin=vmin, norm=LogNorm())
+                        axis.scatter(del_data[0], del_data[1], c=del_values[i], alpha=alpha, cmap=cmap2, s=0.1, vmax=del_vmax, vmin=del_vmin, norm=LogNorm())
                         if time_plot is True:
                             axis.plot(data[0], data[1], color='b', alpha=0.3)
                             axis.plot(del_data[0], del_data[1], color='r', alpha=0.3)
@@ -511,7 +510,8 @@ class Analyzer:
                     dim_tuple = plot_dims[j]
                     for i in range(len(self.x_inits)):
                         data = self.extract_dims(i, dim_tuple, delayed)
-                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=20, vmax=vmax, vmin=vmin)
+                        vmin = vmin + 1e-5
+                        im = axis.scatter(data[0], data[1], c=values[i], alpha=alpha, cmap=cmap, s=0.1, vmax=vmax, vmin=vmin, norm=LogNorm())
                         if time_plot is True:
                             axis.plot(data[0], data[1], color=color, alpha=0.3)
                     if colorbar is True:
@@ -603,27 +603,6 @@ class Analyzer:
                 final_values, type_str = self.extract_values(delayed, focus)[1:]
                 
                 
-                #print(num_points)
-                #for j in range(num_plots):
-                #    axis = ax[j]
-                #    dim_tuple = plot_dims[j]
-                    
-                #    Z = np.zeros(num_points)
-                    
-                    #im = axis.contourf(X, Y, Z, cmap=cmap)
-                        
-                        
-                #    if colorbar is True:
-                #        self.plot_colorbar(fig, axis, im)
-                #    axis.set_xlabel("Dimension {}".format(dim_tuple[0]))
-                #    axis.set_ylabel("Dimension {}".format(dim_tuple[1]))
-                #    if fixed_limits is True:
-                #        axis.set_xlim(self.range_grid)
-                #        axis.set_ylim(self.range_grid)
-                
-                
-                
-                
                 for k, axis in enumerate(ax):
                     Z = np.zeros(num_points)
                     for i in range(num_points):
@@ -668,7 +647,7 @@ class Analyzer:
             
     def plot_list(self, plots, num_bins=25, fixed_bins=True, plot_dims=[(0,1)], time_plot=False,
                   colorbar=True, fixed_limits=True, contour_plot=False, include_exteriors=False, 
-                  cmap='winter', cmap2='autumn'):
+                  cmap='winter', cmap2='viridis'):
         """Unpacks a list of tuples, (delayed, type_plot, focus), representing plots with 
         those parameters and plots each one
         """
@@ -684,7 +663,7 @@ class Analyzer:
                  random=True, break_opt=True, save_state=True, save_loss=True, save_grad=True, 
                  save_iters=True, num_bins=25, fixed_bins=True, plot_dims=[(0,1)], time_plot=False, 
                  colorbar=True, fixed_limits=True, contour_plot=False, include_exteriors=False, 
-                 cmap='winter', cmap2='autumn', print_loss=True, print_grad=False, clear_data=True):
+                 cmap='winter', cmap2='viridis', print_loss=True, print_grad=False, clear_data=True):
         """Contains all the basic functions of the other major functions. Initializes
         points, computes save values, and plots the data according to the parameters.
         
