@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+import pickle
 import itertools
 from matplotlib import pyplot as plt
 from matplotlib import ticker
@@ -361,12 +362,38 @@ class Analyzer:
             del self.delayer
             del self.optimizer
             
+            self.add_initial_vals(delayed) 
+            
         else:   # Check for incorrect inputs
             raise ValueError("Variable 'delays' must be 'both', True, or "
-                             "False.")
+                             "False.")   
+        
         return
             
+         
+    def add_initial_vals(self, delayed, save_loss=True, save_grad=True):
+        """The Delayer class does not include the loss or gradient values for 
+        the initial points in the time series. This function adds those values 
+        to the respective class attributes.
+        """
+        if not (save_loss or save_grad):
+            return
+        else:
+            for i in range(len(self.x_inits)):
+                if save_loss:
+                    loss = self.loss(self.x_inits[i])
+                    if delayed is True:
+                        self.del_loss_vals[i].insert(0, loss)
+                    if delayed is False:
+                        self.loss_vals[i].insert(0, loss)
+                if save_grad:
+                    grad = self.grad(self.x_inits[i])
+                    if delayed is True:
+                        self.del_grad_vals[i].insert(0, grad)
+                    if delayed is False:
+                        self.grad_vals[i].insert(0, grad)
             
+         
     def extract_values(self, delayed, focus):
         """Uses the delayed boolean and focus string to return the desired 
         data.
@@ -377,30 +404,27 @@ class Analyzer:
             
         Returns:
             (list(list)): requested values over time for all points
-            (list): final values for each point
-            (str): string used in creating plot titles
+            (list): final values for all points
         """
         if delayed is True:
             if focus == 'state':
-                return self.del_time_series, self.del_final_states, \
-                    "Delayed State"
+                return self.del_time_series, self.del_final_states
+            
             if focus == 'loss':
-                return self.del_loss_vals, self.del_final_losses, \
-                    "Delayed Loss"
+                return self.del_loss_vals, self.del_final_losses
             if focus == 'grad':
-                return self.del_grad_vals, self.del_final_grads, \
-                    "Delayed Gradient"
+                return self.del_grad_vals, self.del_final_grads
             if focus == 'iters':
-                return None, self.del_iters, "Delayed Iteration"
+                return None, self.del_iters
         if delayed is False:
             if focus == 'state':
-                return self.time_series, self.final_states, "State"
+                return self.time_series, self.final_states
             if focus == 'loss':
-                return self.loss_vals, self.final_losses, "Loss"
+                return self.loss_vals, self.final_losses
             if focus == 'grad':
-                return self.grad_vals, self.final_grads, "Gradient"
+                return self.grad_vals, self.final_grads
             if focus == 'iters':
-                return None, self.iters, "Iteration"
+                return None, self.iters
             
 
     def set_bins(self, num_bins, values, del_values):
@@ -414,14 +438,14 @@ class Analyzer:
         """Pulls the desired data from the saved values."""
         data = list()
         if delayed is True:
-            data.append(self.del_time_series[point_ind][1:,dim_tuple[0]]\
+            data.append(self.del_time_series[point_ind][:,dim_tuple[0]]\
                         .tolist())
-            data.append(self.del_time_series[point_ind][1:,dim_tuple[1]]\
+            data.append(self.del_time_series[point_ind][:,dim_tuple[1]]\
                         .tolist())
         else: 
-            data.append(self.time_series[point_ind][1:,dim_tuple[0]].tolist())
-            data.append(self.time_series[point_ind][1:,dim_tuple[1]].tolist())
-        return data
+            data.append(self.time_series[point_ind][:,dim_tuple[0]].tolist())
+            data.append(self.time_series[point_ind][:,dim_tuple[1]].tolist())
+        return np.array(data)
         
     
     def ravel_data(self, values):
@@ -433,341 +457,446 @@ class Analyzer:
         return new_list
     
     
-    def set_bounds(self, values, time_plot):
-        """Computes and returns the vmax and vmin values for plotting."""
-        vmax = np.nanmax(np.nanmax(values))
-        vmin = self.tol
-        return vmax, vmin
-    
-    
     def plot_colorbar(self, fig, axis, image):
         colorbar = fig.colorbar(image, ax=axis)
         colorbar.set_alpha(1)
         colorbar.draw_all()
         
-            
-    def plot_results(self, delayed, type_plot, focus, num_bins=25, 
-                     fixed_bins=True, plot_dims=[(0,1)], time_plot=False, 
-                     colorbar=True, contour_plot=False, 
-                     include_exteriors=False, cmap='winter_r', cmap2='autumn', 
-                     bounds=None, title=None):
-        """Plot the previously computed results.
-         
-           Parameters: 
-               delayed - whether to plot delayed values (True), undelayed 
-                         values (False), or 'both'
-               type_plot(str) - 'finals' for final state, loss, gradient, or 
-                                   iteration values
-                                'path' to plot the paths of points 
-                                'basin' for basin of attraction plots
-               focus(str) - value to be plotted ('state', 'loss', 'grad', '
-                            iters')
-               num_bins(int) - the number of bins used [finals]
-               fixed_bins(bool) - should the bins be the same for the delayed 
-                                  and undelayed histograms [finals]
-               plot_dims(list(tuples)) - the list of dimensions to plot against
-                                         each other [path]
-               time_plot(bool) - whether to plot the time series of each point 
-                                 [path]
-               contour_plot(bool) - whether to plot the contour of the function
-                                    on top of the plot [basin]
-               include_exteriors(bool) - whether to plot the values for points 
-                                         that did not converge [basin, iters]
-               bounds(list): left and right limits of the plot in each 
-                             dimension
+        
+    def initialize_plot(self, **kwargs):
+        """Returns the figure and axis to plot on. Generates these if they are
+        not given in the keyword arguments.
+        """
+        if 'ax' in kwargs:
+            ax = kwargs['ax']
+            plt.sca(ax)
+            fig = plt.gcf()
+            del kwargs['ax']
+        else:
+            fig, ax = plt.subplots(1, 1, figsize=(10,10))
+        
+        return fig, ax, kwargs
+    
+        
+    def plot_finals(self, delayed, focus='loss', **kwargs):
+        """Plot a histogram of the previously computed final values.
+        
+        Parameters:
+            delayed (bool/str): Values to plot (True, False, or 'both')
+            focus (str): Values to plot ('loss' or 'grad')
         """
         # Error checker
         if delayed not in ('both', True, False):
-            raise ValueError("Variable 'delays' must be 'both', True, or "
-                             "False.")
-        if type_plot not in ('finals', 'path', 'basin'):
-            raise ValueError("Plot type '{}' does not exist."\
-                             .format(type_plot))
-        if focus not in ('state', 'loss', 'grad', 'iters'):
-            raise ValueError("Plot focus must be 'state', 'loss', 'grad', or "
-                             "'iters', not {}.".format(focus))
-            
-        if bounds is None:
-            bounds = self.range_grid
+            raise ValueError(r"'delayed' argument must be 'both', True, or "
+                             "False not '{}'.".format(delayed))
+        if focus not in ('loss', 'grad', 'state', 'iters'):
+            raise ValueError(r"Finals plot focus must be 'loss', 'grad', "
+                             "'state', or 'iters', not '{}'.".format(focus))
         
-        if type_plot == 'finals':
-            # Initialize for the histogram
-            fig, ax = plt.subplots(1, 1, figsize=(10,8))
-                                   
-            if delayed == 'both':    
-                alpha = 0.3
-                final_vals, type_str = self.extract_values(False, focus)[1:]
+        # Initialize plot
+        fig, ax, kwargs = self.initialize_plot(**kwargs)
+            
+        if delayed == 'both': 
+            # Set default values if not specified
+            default = {'alpha':0.3, 'bins':25}
+            kwargs = {**default, **kwargs}
+            
+            # Set fixed bins between delayed and undelayed values
+            if type(kwargs['bins']) == int:
+                final_vals = self.extract_values(False, focus)[1]
                 del_final_vals = self.extract_values(True, focus)[1]
                 if focus == 'state':
                     final_vals = self.ravel_data(final_vals)
                     del_final_vals = self.ravel_data(del_final_vals)
-                if fixed_bins is True:
-                    bins = self.set_bins(num_bins, final_vals, del_final_vals)
-                else:
-                    bins = num_bins
-                
-                ax.hist(final_vals, bins=bins, alpha=alpha, color='b')
-                ax.hist(del_final_vals, bins=bins, alpha=alpha, color='r')
-                    
-            else:
-                alpha = 0.8
-                if delayed is True:
-                    color = 'r'
-                else:
-                    color = 'b'
-                final_vals, type_str = self.extract_values(delayed, focus)[1:]
-                if focus == 'state':
-                    final_vals = self.ravel_data(final_vals)
-                ax.hist(final_vals, bins=num_bins, alpha=alpha, color=color)
-                
-            if title is None:
-                title = "Final {} Values".format(type_str)
-                
-        elif type_plot == 'path':
-            # Check that the focus is correct
-            if focus in ('state', 'iters'):
-                raise ValueError("Path plot type must have a focus of 'loss' "
-                                 "or 'grad'.")
-                
-            # Initialize for the graph
-            num_plots = len(plot_dims)
-            fig, ax = plt.subplots(num_plots, 1, figsize=(10,8*(num_plots)))
-            if type(ax) is not np.ndarray:
-                ax = np.array([ax])
-            alpha = 0.01
+                kwargs['bins'] = self.set_bins(kwargs['bins'], final_vals, 
+                                               del_final_vals)
             
-            if delayed == 'both':
-                values, final_values, type_str = self.extract_values(False, 
-                                                                     focus)
-                del_values, del_final_values = self.extract_values(True, 
-                                                                   focus)[:2]
-                vmax, vmin = self.set_bounds(values, time_plot)
-                del_vmax, del_vmin = self.set_bounds(del_values, time_plot)
+            ax = self.plot_finals(False, focus, ax=ax, color='b', **kwargs)
+            ax = self.plot_finals(True, focus, ax=ax, color='r', **kwargs)
                 
-                for j in range(num_plots):
-                    axis = ax[j]
-                    dim_tuple = plot_dims[j]
-                    for i in range(len(self.x_inits)):
-                        data = self.extract_dims(i, dim_tuple, False)
-                        del_data = self.extract_dims(i, dim_tuple, True)
-                        
-                        im = axis.scatter(data[0], data[1], c=values[i], 
-                                          alpha=alpha, cmap=cmap, s=20,
-                                          norm=mpl.colors.LogNorm(vmin, vmax))
-                        axis.scatter(del_data[0], del_data[1], c=del_values[i], 
-                                     alpha=alpha, cmap=cmap2, s=20, norm=\
-                                     mpl.colors.LogNorm(del_vmin, del_vmax))
-                        if time_plot is True:
-                            axis.plot(data[0], data[1], color='b', alpha=0.3)
-                            axis.plot(del_data[0], del_data[1], color='r', 
-                                      alpha=0.3)
-                    if colorbar is True:
-                        self.plot_colorbar(fig, axis, im)
-                    axis.set_xlabel("Dimension {}".format(dim_tuple[0]))
-                    axis.set_ylabel("Dimension {}".format(dim_tuple[1]))
-                    axis.set_xlim(bounds)
-                    axis.set_ylim(bounds)
-                    
-            else:
-                values, final_values, type_str = self.extract_values(delayed, 
-                                                                     focus)
-                vmax, vmin = self.set_bounds(values, time_plot)
-                color = 'b'
-                if delayed is True:
-                    cmap = cmap2
-                    color = 'r'
-                    
-                for j in range(num_plots):
-                    axis = ax[j]
-                    dim_tuple = plot_dims[j]
-                    for i in range(len(self.x_inits)):
-                        data = self.extract_dims(i, dim_tuple, delayed)
-                        im = axis.scatter(data[0], data[1], c=values[i], 
-                                          alpha=alpha, cmap=cmap, s=20,
-                                          norm=mpl.colors.LogNorm(vmin, vmax))
-                        if time_plot is True:
-                            axis.plot(data[0], data[1], color=color, alpha=0.3)
-                    if colorbar is True:
-                        self.plot_colorbar(fig, axis, im)
-                    axis.set_xlabel("Dimension {}".format(dim_tuple[0]))
-                    axis.set_ylabel("Dimension {}".format(dim_tuple[1]))
-                    axis.set_xlim(bounds)
-                    axis.set_ylim(bounds)
-                        
-            if title is None:
-                title = "Path Tracker on the {} function of {} dimensions"\
-                    .format(self.loss_name, self.n)
-                    
-        elif type_plot == 'basin':
-            # Check that the focus is correct
+        else:
+            # Set default values if not specified
+            default = {'alpha':0.8, 'bins':25, 'color':'b'}
+            kwargs = {**default, **kwargs}
+            
+            # Get data to plot
+            final_vals = self.extract_values(delayed, focus)[1]
             if focus == 'state':
-                raise ValueError("Basin plot type must have a focus of 'loss',"
-                                 " 'grad', or 'iters'.")
-
-            # Check that points were computed as a grid
-            if self.grid is None:
-                raise ValueError("Basin plot type is only compatible with "
-                                 "'grid' test type.")
+                final_vals = self.ravel_data(final_vals)
+                
+            # Plot the histogram of the data
+            ax.hist(final_vals, **kwargs)
             
-            # Check that function is 2D
-            if self.n != 2:
-                raise NotImplementedError("Basin plot type is only implemented"
-                                          " for functions of dimension 2.")
-            
-            if delayed == 'both':
-                fig, ax = plt.subplots(1, 2, figsize=(20,8))
-                final_values, type_str = self.extract_values(False, focus)[1:]
-                del_final_values = self.extract_values(True, focus)[1]
-                num_points = len(self.x_inits)
-                X, Y = self.grid
-                
-                Z, del_Z = np.zeros(num_points), np.zeros(num_points)
-                for i in range(num_points):
-                    Z[i], del_Z[i] = final_values[i], del_final_values[i]
-                    
-                    # Don't include points that didn't converge
-                    if include_exteriors is False and focus == 'iters':    
-                        if self.conv[i] is False:  
-                            Z[i] = np.nan
-                        if self.del_conv[i] is False:
-                            del_Z[i] = np.nan
-                
-                Z = np.resize(Z, (len(X),len(Y))).T
-                del_Z = np.resize(del_Z, (len(X),len(Y))).T
-                ax[0].patch.set_color('.25')
-                vmax, vmin = self.set_bounds(np.stack([Z,del_Z]), False)
-                im0 = ax[0].contourf(X, Y, Z, cmap=cmap, vmin=vmin, vmax=vmax)
-                ax[0].set_xlabel("Dimension 0", size=15)
-                ax[0].set_ylabel("Dimension 1", size=15)
-                ax[0].set_title("Undelayed", size=22, y=1.05)
-                ax[0].set_xlim(bounds)
-                ax[0].set_ylim(bounds)
-                ax[1].patch.set_color('.25')
-                im1 = ax[1].contourf(X, Y, del_Z, cmap=cmap2, vmin=vmin, 
-                                     vmax=vmax)
-                ax[1].set_xlabel("Dimension 0", size=15)
-                ax[1].set_ylabel("Dimension 1", size=15)
-                ax[1].set_title("Delayed", size=22, y=1.05)
-                ax[1].set_xlim(bounds)
-                ax[1].set_ylim(bounds)
-                
-                if colorbar is True:
-                    self.plot_colorbar(fig, ax[0], im0)
-                    self.plot_colorbar(fig, ax[1], im1)
-                
-                if contour_plot is True:
-                    if num_points < 250:
-                        num_points = 250
-                    points, grid = self.create_grid(num_points)
-                    X, Y = grid
-                    Z = np.zeros(num_points**2)
-                    
-                    for i in range(num_points**2):
-                        Z[i] = self.loss(points[i])
-                    Z = np.resize(Z, (len(X),len(Y))).T
-                    ax[0].contour(X, Y, Z, locator=ticker.LogLocator(), 
-                                  cmap=cmap2, linewidths=3)
-                    ax[1].contour(X, Y, Z, locator=ticker.LogLocator(), 
-                                  cmap=cmap, linewidths=3)
-                
-            else:
-                # Initialize values and the figure
-                num_plots = len(plot_dims)
-                num_points = len(self.x_inits)
-                X, Y = self.grid
-                fig, ax = plt.subplots(num_plots, 1, 
-                                       figsize=(10,8*(num_plots)))
-                if type(ax) is not np.ndarray:
-                    ax = np.array([ax])    # TODO : Make sure that casting as an array doesnt create problems
-                    
-                if focus in ['loss','grad']:    # Always include exteriors for loss and gradient
-                    include_exteriors = True
-                
-                
-                ## Need to find the indices of points corresponding to each set of dimensions we want to graph
-                final_values, type_str = self.extract_values(delayed, focus)[1:]
-                
-                
-                #print(num_points)
-                #for j in range(num_plots):
-                #    axis = ax[j]
-                #    dim_tuple = plot_dims[j]
-                    
-                #    Z = np.zeros(num_points)
-                    
-                    #im = axis.contourf(X, Y, Z, cmap=cmap)
-                        
-                        
-                #    if colorbar is True:
-                #        self.plot_colorbar(fig, axis, im)
-                #    axis.set_xlabel("Dimension {}".format(dim_tuple[0]))
-                #    axis.set_ylabel("Dimension {}".format(dim_tuple[1]))
-                #    if fixed_limits is True:
-                #        axis.set_xlim(self.range_grid)
-                #        axis.set_ylim(self.range_grid)
-                
-                if delayed is True:
-                    cmap, cmap2 = cmap2, cmap
-                
-                for k, axis in enumerate(ax):
-                    Z = np.zeros(num_points)
-                    for i in range(num_points):
-                        Z[i] = final_values[i]
-                        
-                        # Do not include points that did not converge
-                        if include_exteriors is False:
-                            if delayed is True:
-                                if self.del_conv[i] is False:  
-                                    Z[i] = np.nan
-                            else:
-                                if self.conv[i] is False:
-                                    Z[i] = np.nan
-                    
-                    Z = np.resize(Z, (len(X),len(Y))).T
-                    axis.patch.set_color('.25')
-                    im = axis.contourf(X, Y, Z, cmap=cmap)
-                    axis.set_xlabel("Dimension {}".format(plot_dims[k][0]), size=15)
-                    axis.set_ylabel("Dimension {}".format(plot_dims[k][1]), size=15)
-                    axis.set_xlim(bounds)
-                    axis.set_ylim(bounds)
-                    
-                    if colorbar is True:
-                        self.plot_colorbar(fig, axis, im)
-                    
-                if contour_plot is True:
-                    if num_points < 250:
-                        num_points = 250
-                    points, grid = self.create_grid(num_points)
-                    X, Y = grid
-                    Z = np.zeros(num_points**2)
-                    
-                    for i in range(num_points**2):
-                        Z[i] = self.loss(points[i])
-                    Z = np.resize(Z, (len(X),len(Y))).T
-                    ax.contour(X, Y, Z, locator=ticker.LogLocator(), 
-                               cmap=cmap2, linewidths=3)
-            
-            if title is None:
-                title = "{} Basin of Attraction Plot".format(type_str)
-            
-        fig.suptitle(title, size=26, y=1.05)
-        fig.tight_layout()
-        fig.subplots_adjust(top=0.9)
-        plt.show()
+        return ax
         
             
-    def plot_list(self, plots, num_bins=25, fixed_bins=True, plot_dims=[(0,1)],
-                  time_plot=False, colorbar=True, contour_plot=False, 
-                  include_exteriors=False, cmap='winter', cmap2='autumn', 
-                  bounds=None, title=None):
-        """Unpacks a list of tuples, (delayed, type_plot, focus), representing 
-        plots with those parameters and plots each one
+    def plot_iters(self, delayed, focus='loss', plot_dims=(0,1), points=None, 
+                   iters=None, colorbar=False, **kwargs):
+        """Plot the scatterplot of state values for each iteration of 
+        optimization previously computed
+        
+        Parameters:
+            delayed (bool/str): Values to plot (True, False, or 'both')
+            focus (str): Values to plot ('loss' or 'grad')
+            plot_dims (tuple): Two dimensions to plot against each other
         """
+        # Error checker
+        if delayed not in ('both', True, False):
+            raise ValueError(r"'delayed' argument must be 'both', True, or "
+                             "False not '{}'.".format(delayed))
+        if focus not in ('loss', 'grad'):
+            raise ValueError(r"Iters plot focus must be 'loss' or 'grad', not "
+                             "'{}'.".format(focus))
+            
+        # Initialize plot
+        fig, ax, kwargs = self.initialize_plot(**kwargs)
+            
+        if delayed == 'both':
+            ax = self.plot_iters(False, focus, plot_dims, ax=ax, **kwargs)
+            ax = self.plot_iters(True, focus, plot_dims, ax=ax, cmap='autumn',
+                                 **kwargs)
+            
+        else:
+            # Get values to plot
+            values = self.extract_values(delayed, focus)[0]
+            
+            # Set default parameters if not specified
+            vmax = max([np.max(point) for point in values])
+            vmin = self.tol
+            default = {'alpha':0.01, 's':20, 'cmap':'winter_r',  
+                       'norm':mpl.colors.LogNorm(vmin, vmax)}
+            kwargs = {**default, **kwargs}
+            
+            # By default plot all points for all iterations
+            if points is None:
+                points = np.arange(len(self.x_inits))
+            if iters is None:
+                iters = self.maxiter
+            
+            # Plot values
+            for i in points:
+                data = self.extract_dims(i, plot_dims, delayed)
+                if abs(iters) < data.shape[1]:
+                    if iters < 0:
+                        data = data[:,iters:]
+                        colors = values[i][iters:]
+                    else:
+                        data = data[:,:iters]
+                        colors = values[i][:iters]
+                else:
+                    colors = values[i]
+                im = ax.scatter(data[0], data[1], c=colors, **kwargs)
+                
+            # Format axis
+            if colorbar is True:
+                self.plot_colorbar(fig, ax, im)
+            ax.set_xlabel("Dimension {}".format(plot_dims[0]))
+            ax.set_ylabel("Dimension {}".format(plot_dims[1]))
+            ax.set_xlim(self.range_grid)
+            ax.set_ylim(self.range_grid)
+            
+        return plt.gca()
+        
+        
+    def plot_paths(self, delayed, plot_dims=(0,1), points=None, iters=0, 
+                   **kwargs):
+        """Plot the path of the previously computed optimization over time.
+        
+        Parameters:
+            delayed (bool/str): Values to plot (True, False, or 'both')
+            time_plot (list): Indices of the paths to plot
+            plot_dims (tuple): Two dimensions to plot against each other
+        """
+        # Error checker
+        if delayed not in ('both', True, False):
+            raise ValueError(r"'delayed' argument must be 'both', True, or "
+                             "False not '{}'.".format(delayed))
+        
+        # Initialize plot
+        fig, ax, kwargs = self.initialize_plot(**kwargs)
+            
+        if delayed == 'both':
+            ax = self.plot_paths(False, plot_dims, ax=ax, **kwargs)
+            ax = self.plot_paths(True, plot_dims, ax=ax, **kwargs)
+            
+        else:
+            # Set default values if not specified
+            default = {'alpha':0.5, 'lw':3, 'c':'k'}
+            kwargs = {**default, **kwargs}
+            
+            # By default plot all points for all iterations
+            if points is None:
+                points = np.arange(len(self.x_inits))
+            if iters is None:
+                iters = self.maxiter
+            
+            # Plot values
+            for i in points:
+                data = self.extract_dims(i, plot_dims, delayed)
+                if abs(iters) < data.shape[1]:
+                    if iters < 0:
+                        data = data[:,iters:]
+                    else:
+                        data = data[:,:iters]
+                ax.plot(data[0], data[1], **kwargs)
+                
+                
+            # Format axis
+            ax.set_xlabel("Dimension {}".format(plot_dims[0]))
+            ax.set_ylabel("Dimension {}".format(plot_dims[1]))
+            ax.set_xlim(self.range_grid)
+            ax.set_ylim(self.range_grid)
+            
+        return ax
+        
+        
+    def plot_basin(self, delayed, focus='loss', colorbar=False, **kwargs):
+        """Plot a contour plot of the basin of attraction from the previously
+        computed optimization.
+        
+        Parameters:
+            delayed (bool): Delayed or undelayed values
+            focus (str): Values to plot ('loss' or 'grad')
+        """
+        # Error checker
+        if type(delayed) != bool:
+            raise ValueError(r"'delayed' argument must be True or False for "
+                             "basin plots, not '{}'.".format(delayed))
+        
+        if focus not in ('loss', 'grad', 'iters'):
+            raise ValueError("Basin plot type must have a focus of 'loss', "
+                             "'grad', or 'iters'.")
+            
+        if self.grid is None:
+            raise ValueError("Basin plot type is only compatible with "
+                             "'grid' point generation.")
+        
+        if self.n != 2:
+            raise NotImplementedError("Basin plot type is only implemented "
+                                      "for functions of dimension 2.")
+        
+        # Initialize plot
+        fig, ax, kwargs = self.initialize_plot(**kwargs) 
+        
+        # Set when nonconvergent points are dropped
+        drop_vals = False
+        if focus == 'iters':
+            drop_vals = True
+        
+        # Get values to plot
+        X, Y = self.grid
+        final_values = self.extract_values(delayed, focus)[1]
+        
+        # Format data for contour plot
+        if drop_vals is True:
+            if delayed is True:
+                Z = np.where(self.del_conv, final_values, np.nan)
+            else:
+                Z = np.where(self.conv, final_values, np.nan)
+        else:
+            Z = final_values
+        Z = np.resize(Z, (len(X),len(Y))).T
+        
+        # Set default values if not specified
+        default = {'cmap':'winter_r'}
+        kwargs = {**default, **kwargs}
+        
+        # Plot values
+        im = ax.contourf(X, Y, Z, **kwargs)
+        
+        # Format axis
+        ax.patch.set_color('.25')
+        ax.set_xlabel("Dimension 0")
+        ax.set_ylabel("Dimension 1")
+        ax.set_xlim(self.range_grid)
+        ax.set_ylim(self.range_grid)
+        
+        if colorbar is True:
+            self.plot_colorbar(fig, ax, im)
+            
+        return ax
+    
+    
+    def plot_conv(self, delayed, plot_dims=(0,1), drop_vals=False, **kwargs):
+        """Plot the final state values of the optimization
+        
+        Parameters:
+            delayed (bool/str): Values to plot (True, False, or 'both')
+            plot_dims (tuple): Two dimensions to plot against each other
+            drop_vals (bool): Whether to drop final points that did not converge
+        """
+        # Error checker
+        if delayed not in ('both', True, False):
+                raise ValueError(r"'delayed' argument must be 'both', True, or "
+                                 "False not '{}'.".format(delayed))
+        
+        # Initialize plot
+        fig, ax, kwargs = self.initialize_plot(**kwargs)
+        
+        if delayed == 'both':
+            self.plot_final_states(False, plot_dims, drop_vals, ax=ax, c='g', 
+                                   **kwargs)
+            self.plot_final_states(True, plot_dims, drop_vals, ax=ax, c='o', 
+                                   **kwargs)
+        
+        else:
+            # Set default parameters if not specified
+            default = {'alpha':0.2, 'c':'g', 's':30}
+            kwargs = {**default, **kwargs}
+            
+            # Get values to plot
+            values = self.extract_values(delayed, 'state')[1]
+            data = np.array([(point[plot_dims[0]], point[plot_dims[1]]) for 
+                             point in values])
+            
+            # Drop points that did not converge if desired
+            if drop_vals is True:
+                if delayed is True:
+                    data = data[self.del_conv]
+                else:
+                    data = data[self.conv]
+    
+            # Plot
+            ax.scatter(data[:,0], data[:,1], **kwargs)
+            
+            # Format axis
+            ax.set_xlabel("Dimension {}".format(plot_dims[0]))
+            ax.set_ylabel("Dimension {}".format(plot_dims[1]))
+            ax.set_xlim(self.range_grid)
+            ax.set_ylim(self.range_grid)
+            
+        return plt.gca()
+    
+    
+    def plot_contour(self, num_points=250, **kwargs):
+        """Create a contour plot of the function."""
+        # Initialize plot
+        fig, ax, kwargs = self.initialize_plot(**kwargs)
+        
+        # Create grid of points
+        points, grid = self.create_grid(num_points)
+        X, Y = grid
+        
+        # Get loss values over the grid of points
+        Z = np.array([self.loss(point) for point in points])
+        Z = np.resize(Z, (len(X),len(Y))).T
+    
+        # Set default values if not specified
+        default = {'linewidths':3, 'cmap':'autumn', 
+                   'locator':ticker.LogLocator()}
+        kwargs = {**default, **kwargs}
+        
+        ax.contour(X, Y, Z, **kwargs)
+        
+        return ax
+    
+    
+    def plot_inits(self, plot_dims=(0,1), points=None, **kwargs):
+        """Plot the initial points."""
+        # Initialize plot
+        fig, ax, kwargs = self.initialize_plot(**kwargs)
+        
+        # Set default parameters if not specified
+        default = {'alpha':1., 's':30, 'c':'b'}
+        kwargs = {**default, **kwargs}
+        if points is None:
+            points = np.arange(len(self.x_inits))
+            
+        # Get values to plot
+        data = self.x_inits[points][:,plot_dims]
+        
+        # Plot
+        ax.scatter(data[:,0], data[:,1], **kwargs)
+        
+        # Format axis
+        ax.set_xlabel("Dimension {}".format(plot_dims[0]))
+        ax.set_ylabel("Dimension {}".format(plot_dims[1]))
+        ax.set_xlim(self.range_grid)
+        ax.set_ylim(self.range_grid)
+        
+        return ax
+        
+        
+    def plot_results(self, plot_type, **kwargs):
+        """Wrapper function for plotting function types."""
+        # Parse by plot type
+        if plot_type == "finals":
+            ax = self.plot_finals(**kwargs)
+        elif plot_type == "iters":
+            ax = self.plot_iters(**kwargs)
+        elif plot_type == "paths":
+            ax = self.plot_paths(**kwargs)
+        elif plot_type == "basin":
+            ax = self.plot_basin(**kwargs)
+        elif plot_type == "contour":
+            ax = self.plot_contour(**kwargs)
+        elif plot_type == "conv":
+            ax = self.plot_conv(**kwargs)
+        elif plot_type == "inits":
+            ax = self.plot_inits(**kwargs)
+        else:
+            raise ValueError(r"Plot 'type' parameter must be \"finals\", "
+                             "\"iters\", \"paths\", \"basin\", \"contour\", "
+                             "\"conv\", or \"inits\" not {}".format(plot_type))
+            
+        return ax
+        
+        
+    def plot_list(self, plots, ax=None):
+        """Unpacks a list of dictionaries representing plots and plots each 
+        on the same axis
+        """
+        # Initialize plot
+        if ax is not None:
+            plt.sca(ax)
+            fig = plt.gcf()
+        else:
+            fig, ax = plt.subplots(1, 1, figsize=(10,10))
+            
+        # Check if 'plots' is actually a single plot 
+        if type(plots) == dict:
+            plots = [plots]
+        
+        # Iterate through each plot in the list
         for plot in plots:
-            delayed, type_plot, focus = plot
-            self.plot_results(delayed, type_plot, focus, num_bins, fixed_bins, 
-                              plot_dims, time_plot, colorbar, contour_plot, 
-                              include_exteriors, cmap, cmap2, bounds, title)
+            # Error checks
+            if 'plot_type' not in plot:
+                raise ValueError("Must specify 'plot_type' parameter.")
+            plot_type = plot['plot_type']
+            kwargs = plot.copy()
+            del kwargs['plot_type']
+            ax = self.plot_results(plot_type, ax=ax, **kwargs)
+            
+        return ax
+        
+        
+    def plot_array(self, plots_arr, axes=None):
+        """Plot an array of subplots.
+        
+        Parameters:
+            plots_arr (ndarray(list)): 2d array of lists of dictionaries 
+                    respresenting plots in a certain configuration.
+            axes (ndarray): Array of subplot axes to plot on. If None, create 
+                    a subplots array with the same shape as plots_arr
+        """
+        m, n = np.shape(plots_arr)[:2]
+        
+        # Initialize figure
+        if axes is not None:
+            axis = np.ravel(axes)[0]
+            plt.sca(axis)
+            fig = plt.gcf()
+        else:
+            fig, axes = plt.subplots(m, n, figsize=(10*n,10*m))
+            
+        # Reshape the respective arrays for easier iteration
+        plots = plots_arr.reshape((1, -1))[0]
+        axes_list = np.ravel(axes)
+        
+        for i, ax in enumerate(axes_list):
+            self.plot_list(plots[i], ax=ax)
+            
+        return fig, axes
         
         
     def optimize(self, num_points, sample, delayed, plots=[], points=None, 
@@ -791,6 +920,9 @@ class Analyzer:
             print_vals(bool): whether to print gradient and loss information
             clear_data(bool): whether to clear the data at the end
         """
+        raise DeprecationWarning("The optimize function is outdated and needs "
+                                 "to be updated")
+        
         self.initialize_vars(range_grid=range_grid)
         self.initialize_points(num_points, sample, points)
         self.calculate_save_values(delayed, max_L, num_delays, maxiter, tol, D,
@@ -836,6 +968,32 @@ class Analyzer:
             print("Mean Gradient:", np.mean(self.final_grads))
             print("Median Gradient:", np.median(self.final_grads))
         
+     
+    def save_vals(self, filename):
+        attr_dict = self.__dict__.copy()
+        
+        # Drop attributes from dictionary
+        drops=['loss', 'grad', 'final_states', 'final_losses', 'final_grads']
+        for attr in drops:
+            attr_dict.pop(attr)
+        
+        with open(filename, 'wb') as file:
+            pickle.dump(attr_dict, file)
+            
+    
+    def load_vals(self, filename):
+        with open(filename, 'rb') as file:
+            attr_dict = pickle.load(file)
+        
+        self.__dict__.update(attr_dict)
+        self.__dict__['final_states'] = [self.time_series[i][-1] for i in 
+                                         range(len(self.time_series))]
+        self.__dict__['final_losses'] = [self.loss_vals[i][-1] for i in 
+                                         range(len(self.loss_vals))]
+        self.__dict__['final_grads'] = [self.grad_vals[i][-1] for i in 
+                                        range(len(self.grad_vals))]
+        
+            
         
     def delete_initials(self):
         """Deletes all initialized points"""
@@ -913,6 +1071,7 @@ class Analyzer:
         self.delete_initials()
         self.delete_undelayed_data()
         self.delete_delayed_data()
+        
         
     def __del__(self):
         self.clear()
