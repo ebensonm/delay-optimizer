@@ -18,8 +18,7 @@ class Analyzer:
     and gradient values over time, and to graph plots of that data.
     """
     def __init__(self, n, loss_name, optimizer_name='Adam', const_lr=False, 
-                 max_L=1, num_delays=1000, maxiter=2000, tol=1e-5, 
-                 compute_loss=True, save_grad=True, verbose=False):
+                 max_L=1, num_delays=1000, maxiter=2000, tol=1e-5, **kwargs):
         """The initializer for the Helper class.
             
            Parameters: 
@@ -46,10 +45,8 @@ class Analyzer:
         self.num_delays = num_delays
         self.maxiter = maxiter
         self.tol = tol
-        self.compute_loss = compute_loss
-        self.save_grad = save_grad
         self.initialize_functions()
-        self.initialize_params(verbose)
+        self.initialize_params()
         
         # Initialize the lists of values to save
         self.x_inits = None
@@ -102,61 +99,43 @@ class Analyzer:
                              .format(self.loss_name))
         
         
-    def initialize_params(self, verbose=False):
+    def initialize_params(self):
         """Set the delayed and undelayed optimal parameters closest to those 
         computed.
         """
         # Get the data we need
-        hyperparams = pd.read_csv('../best_hyperparams.csv')
+        hyperparams = pd.read_csv('../final_params.csv')
         params = hyperparams[hyperparams["loss_name"] == self.loss_name]
         params = params[params["dim"] == self.n]
         if len(params[params["max_L"] == self.max_L]) != 0:
             params = params[params["max_L"] == self.max_L]
-        params = params[params["optimizer_name"] == self.optimizer_name]
-        params = params[params["constant_learning_rate"] == self.const_lr]
         
-        # Extract and organize the values we need
-        if self.const_lr is True:
-            params = params[["use_delays", "best_loss", "learning_rate"]]
-        else:
-            params = params[["use_delays", "best_loss", "step_size", 
-                             "min_learning_rate", "max_learning_rate"]]
-        
-        # If there is more than one run satisfying the conditions
+        # Separate and organize the values we need
+        params = params.drop(columns=['loss_name','dim','max_L'])
         del_params = params[params.use_delays == True]
-        if len(del_params) > 1:
-            del_params = del_params[del_params.best_loss == 
-                                    del_params.best_loss.min()]
-            
         undel_params = params[params.use_delays == False]
-        if len(undel_params) > 1:
-            undel_params = undel_params[undel_params.best_loss == 
-                                        undel_params.best_loss.min()]
         
         # Create parameter dictionaries
-        del_params = del_params.drop(columns=["use_delays", "best_loss"])\
+        del_params = del_params.drop(columns=['use_delays'])\
             .to_dict('index').values()
-        params = undel_params.drop(columns=["use_delays", "best_loss"])\
+        undel_params = undel_params.drop(columns=['use_delays'])\
             .to_dict('index').values()
         
         # Set undelayed params
-        if len(list(params)) == 0:
-            self.params = {'step_size': 740., 'min_learning_rate': 0.23, 
-                           'max_learning_rate': 2.98}
+        if len(list(undel_params)) == 0:
+            self.params = {'max_learning_rate': 2.98,
+                           'min_learning_rate': 0.23,
+                           'step_size': 740.}
         else:
             self.params = list(params)[0]
             
-        # Set undelayed params
+        # Set delayed params
         if len(list(del_params)) == 0:
-            self.del_params = {'step_size': 740., 'min_learning_rate': 0.23, 
-                               'max_learning_rate': 2.98}
+            self.del_params = {'max_learning_rate': 2.98,
+                               'min_learning_rate': 0.23,
+                               'step_size': 740.}
         else:
             self.del_params = list(del_params)[0]
-            
-        if verbose is True:
-            print(f"{self.n}d {self.loss_name} function initialized with parameters:")
-            print("\tDelayed:", self.del_params)
-            print("\tUndelayed:", self.params)
         
         
     def initialize_optimizer(self, delayed, beta_1=0.9, beta_2=0.999):
@@ -178,13 +157,13 @@ class Analyzer:
                              .format(self.optimizer_name))
             
             
-    def initialize_delayer(self):
+    def initialize_delayer(self, compute_loss=True, save_grad=True):
         """Initialize the Delayer class item for optimization."""
         self.delayer = Delayer.Delayer(self.n, self.optimizer, self.loss, 
                                        self.grad, max_L=self.max_L, 
                                        num_delays=self.num_delays, 
-                                       compute_loss=self.compute_loss, 
-                                       save_grad=self.save_grad)
+                                       compute_loss=compute_loss, 
+                                       save_grad=save_grad)
             
             
     def initialize_points(self, num_points, sample, points=None):
@@ -249,19 +228,18 @@ class Analyzer:
         return x_inits, grid
     
             
-    def initialize_vars(self, range_grid=None, max_L=None, num_delays=None, 
-                        maxiter=None, tol=None):
-        """Updates parameters if new values are given."""
-        if range_grid is not None:
-            self.range_grid = range_grid
-        if max_L is not None:
-            self.max_L = max_L
-        if num_delays is not None:
-            self.num_delays = num_delays
-        if maxiter is not None:
-            self.maxiter = maxiter
-        if tol is not None:
-            self.tol = tol
+    def initialize_vars(self, **kwargs):
+        """Updates parameters by keyword argument."""
+        if 'range_grid' in kwargs:
+            self.range_grid = kwargs['range_grid']
+        if 'max_L' in kwargs:
+            self.max_L = kwargs['max_L']
+        if 'num_delays' in kwargs:
+            self.num_delays = kwargs['num_delays']
+        if 'maxiter' in kwargs:
+            self.maxiter = kwargs['maxiter']
+        if 'tol' in kwargs:
+            self.tol = kwargs['tol']
             
             
     def run_single_start(self, x_init, use_delays, D=None, random=True, 
@@ -273,10 +251,9 @@ class Analyzer:
                                          D=D, break_opt=break_opt)
             
             
-    def calculate_save_values(self, delayed, max_L=None, num_delays=None, 
-                              maxiter=None, tol=None, D=None, random=True, 
+    def calculate_save_values(self, delayed, D=None, random=True, 
                               break_opt=True, save_state=True, save_loss=True, 
-                              save_grad=True, save_iters=True):
+                              save_grad=True, save_iters=True, **kwargs):
         """Run the optimization on the initial points already initialized and 
         saves values to be plotted.
         
@@ -302,12 +279,12 @@ class Analyzer:
         """
         if delayed == 'both':
             # If 'both' run the function for both True and False
-            self.calculate_save_values(False, max_L, num_delays, maxiter, tol, 
-                                       D, random, break_opt, save_state, 
-                                       save_loss, save_grad, save_iters)
-            self.calculate_save_values(True, max_L, num_delays, maxiter, tol, 
-                                       D, random, break_opt, save_state, 
-                                       save_loss, save_grad, save_iters)
+            self.calculate_save_values(False, D, random, break_opt, save_state, 
+                                       save_loss, save_grad, save_iters, 
+                                       **kwargs)
+            self.calculate_save_values(True, D, random, break_opt, save_state, 
+                                       save_loss, save_grad, save_iters, 
+                                       **kwargs)
         elif delayed in (True, False):
             # Reset old data
             if delayed is True:
@@ -316,8 +293,7 @@ class Analyzer:
                 self.delete_undelayed_data()
                 
             # Initialize
-            self.initialize_vars(max_L=max_L, num_delays=num_delays, 
-                                 maxiter=maxiter, tol=tol)
+            self.initialize_vars(**kwargs)
             self.initialize_optimizer(delayed)
             self.initialize_delayer()
             
@@ -362,7 +338,7 @@ class Analyzer:
             del self.delayer
             del self.optimizer
             
-            self.add_initial_vals(delayed) 
+            self.add_initial_vals(delayed, save_loss, save_grad) 
             
         else:   # Check for incorrect inputs
             raise ValueError("Variable 'delays' must be 'both', True, or "
@@ -409,7 +385,6 @@ class Analyzer:
         if delayed is True:
             if focus == 'state':
                 return self.del_time_series, self.del_final_states
-            
             if focus == 'loss':
                 return self.del_loss_vals, self.del_final_losses
             if focus == 'grad':
@@ -530,7 +505,7 @@ class Analyzer:
         return ax
         
             
-    def plot_iters(self, delayed, focus='loss', plot_dims=(0,1), points=None, 
+    def plot_iters(self, delayed, focus='iters', plot_dims=(0,1), points=None, 
                    iters=None, colorbar=False, **kwargs):
         """Plot the scatterplot of state values for each iteration of 
         optimization previously computed
@@ -544,9 +519,9 @@ class Analyzer:
         if delayed not in ('both', True, False):
             raise ValueError(r"'delayed' argument must be 'both', True, or "
                              "False not '{}'.".format(delayed))
-        if focus not in ('loss', 'grad'):
-            raise ValueError(r"Iters plot focus must be 'loss' or 'grad', not "
-                             "'{}'.".format(focus))
+        if focus not in ('loss', 'grad', 'iters'):
+            raise ValueError(r"Iters plot focus must be 'loss', 'grad', or "
+                             "'iters' not '{}'.".format(focus))
             
         # Initialize plot
         fig, ax, kwargs = self.initialize_plot(**kwargs)
@@ -555,23 +530,32 @@ class Analyzer:
             ax = self.plot_iters(False, focus, plot_dims, ax=ax, **kwargs)
             ax = self.plot_iters(True, focus, plot_dims, ax=ax, cmap='autumn',
                                  **kwargs)
-            
+
         else:
-            # Get values to plot
-            values = self.extract_values(delayed, focus)[0]
-            
-            # Set default parameters if not specified
-            vmax = max([np.max(point) for point in values])
-            vmin = self.tol
-            default = {'alpha':0.01, 's':20, 'cmap':'winter_r',  
-                       'norm':mpl.colors.LogNorm(vmin, vmax)}
-            kwargs = {**default, **kwargs}
+            # Set default parameters
+            default = {'alpha':0.01, 's':20, 'cmap':'winter_r'}
             
             # By default plot all points for all iterations
             if points is None:
                 points = np.arange(len(self.x_inits))
             if iters is None:
                 iters = self.maxiter
+            
+            # Determine scaling for plotting
+            if focus == 'iters':
+                final_iters = self.extract_values(delayed, 'iters')[1]
+                values = [np.arange(it) for it in final_iters]
+                vmax, vmin = self.maxiter, 1
+            else:
+                values = self.extract_values(delayed, focus)[0]
+                vmax = max([np.max(point) for point in values])
+                vmin = self.tol
+                
+            if 'norm' in kwargs and kwargs['norm'] == 'log':
+                kwargs['norm'] = mpl.colors.LogNorm(vmin, vmax)
+            else:
+                kwargs['norm'] = mpl.colors.Normalize(vmin, vmax)
+            kwargs = {**default, **kwargs}
             
             # Plot values
             for i in points:
@@ -590,15 +574,13 @@ class Analyzer:
             # Format axis
             if colorbar is True:
                 self.plot_colorbar(fig, ax, im)
-            ax.set_xlabel("Dimension {}".format(plot_dims[0]))
-            ax.set_ylabel("Dimension {}".format(plot_dims[1]))
             ax.set_xlim(self.range_grid)
             ax.set_ylim(self.range_grid)
             
         return plt.gca()
         
         
-    def plot_paths(self, delayed, plot_dims=(0,1), points=None, iters=0, 
+    def plot_paths(self, delayed, plot_dims=(0,1), points=None, iters=None, 
                    **kwargs):
         """Plot the path of the previously computed optimization over time.
         
@@ -642,8 +624,6 @@ class Analyzer:
                 
                 
             # Format axis
-            ax.set_xlabel("Dimension {}".format(plot_dims[0]))
-            ax.set_ylabel("Dimension {}".format(plot_dims[1]))
             ax.set_xlim(self.range_grid)
             ax.set_ylim(self.range_grid)
             
@@ -706,8 +686,6 @@ class Analyzer:
         
         # Format axis
         ax.patch.set_color('.25')
-        ax.set_xlabel("Dimension 0")
-        ax.set_ylabel("Dimension 1")
         ax.set_xlim(self.range_grid)
         ax.set_ylim(self.range_grid)
         
@@ -760,8 +738,6 @@ class Analyzer:
             ax.scatter(data[:,0], data[:,1], **kwargs)
             
             # Format axis
-            ax.set_xlabel("Dimension {}".format(plot_dims[0]))
-            ax.set_ylabel("Dimension {}".format(plot_dims[1]))
             ax.set_xlim(self.range_grid)
             ax.set_ylim(self.range_grid)
             
@@ -809,8 +785,6 @@ class Analyzer:
         ax.scatter(data[:,0], data[:,1], **kwargs)
         
         # Format axis
-        ax.set_xlabel("Dimension {}".format(plot_dims[0]))
-        ax.set_ylabel("Dimension {}".format(plot_dims[1]))
         ax.set_xlim(self.range_grid)
         ax.set_ylim(self.range_grid)
         
@@ -879,6 +853,10 @@ class Analyzer:
             axes (ndarray): Array of subplot axes to plot on. If None, create 
                     a subplots array with the same shape as plots_arr
         """
+        raise DeprecationWarning("The plot_array function is buggy due to lots"
+                                 "of nested lists. Please use the plot_list"
+                                 "function instead.")
+        
         m, n = np.shape(plots_arr)[:2]
         
         # Initialize figure
@@ -899,47 +877,47 @@ class Analyzer:
         return fig, axes
         
         
-    def optimize(self, num_points, sample, delayed, plots=[], points=None, 
-                 range_grid=None, max_L=None, num_delays=None, maxiter=None, 
-                 tol=None, D=None, random=True, break_opt=True, 
-                 save_state=True, save_loss=True, save_grad=True, 
-                 save_iters=True, num_bins=25, fixed_bins=True, 
-                 plot_dims=[(0,1)], time_plot=False, colorbar=True, 
-                 contour_plot=False, include_exteriors=False, cmap='winter_r', 
-                 cmap2='autumn', bounds=None, title=None, print_loss=True, 
-                 print_grad=False, clear_data=False):
-        """Contains all the basic functions of the other major functions. Initializes
-        points, computes save values, and plots the data according to the parameters.
+    def optimize(self, num_points, sample, delayed, points=None, 
+                 print_vals='loss', clear_data=False, 
+                 **kwargs):
+        """Quick start function for optimization. Initializes points, computes 
+        save values, and prints loss/gradient values.
         
         Parameters:
             num_points(int): number of points to initialize
             sample(str): 'random', 'same', 'grid', or 'given'
             delayed: whether to calculate for delayed, undelayed, or 'both'
-            plots(list): list of tuples of plots (delayed, type_plot, focus)
             points(list): list of points to use for sample='given'
             print_vals(bool): whether to print gradient and loss information
             clear_data(bool): whether to clear the data at the end
         """
-        raise DeprecationWarning("The optimize function is outdated and needs "
-                                 "to be updated")
-        
-        self.initialize_vars(range_grid=range_grid)
+        # Initialize variables, initialize points, and run optimization
+        self.initialize_vars(**kwargs)
         self.initialize_points(num_points, sample, points)
-        self.calculate_save_values(delayed, max_L, num_delays, maxiter, tol, D,
-                                   random, break_opt, save_state, save_loss, 
-                                   save_grad, save_iters)
-        self.plot_list(plots, num_bins, fixed_bins, plot_dims, time_plot, 
-                       colorbar, contour_plot, include_exteriors, cmap, cmap2, 
-                       bounds, title)
+        self.calculate_save_values(delayed, **kwargs)
         
-        if print_loss is True:
-            self.print_loss(delayed)
-        if print_grad is True:
-            self.print_grad(delayed)
+        self.print_vals(print_vals, delayed)       # Print specified values
         
-        if clear_data is True:
+        if clear_data is True:                     # Clear data
             self.clear()
+            
+            
+    def get_mean_loss(self, delayed):
+        if delayed is True:
+            return np.mean(self.final_losses)
+        else:
+            return np.mean(self.del_final_losses)
         
+        
+    def print_vals(self, vals, delayed):
+        if vals is True:
+            self.print_loss(delayed)
+            self.print_grad(delayed)
+        elif vals == 'loss':
+            self.print_loss(delayed)
+        elif vals == 'grad':
+            self.print_grad(delayed)
+    
             
     def print_loss(self, delayed):
         if delayed == 'both':
@@ -950,9 +928,9 @@ class Analyzer:
             print("Mean Delayed Loss:", np.mean(self.del_final_losses))
             print("Median Delayed Loss:", np.median(self.del_final_losses))
         elif delayed is False:
-            print("Minimum Loss:", np.min(self.final_losses))
-            print("Mean Loss:", np.mean(self.final_losses))
-            print("Median Loss:", np.median(self.final_losses))
+            print("Minimum Undelayed Loss:", np.min(self.final_losses))
+            print("Mean Undelayed Loss:", np.mean(self.final_losses))
+            print("Median Undelayed Loss:", np.median(self.final_losses))
             
         
     def print_grad(self, delayed):
@@ -964,9 +942,9 @@ class Analyzer:
             print("Mean Delayed Gradient:", np.mean(self.del_final_grads))
             print("Median Delayed Gradient:", np.median(self.del_final_grads))
         elif delayed is False:
-            print("Minimum Gradient:", np.min(self.final_grads))
-            print("Mean Gradient:", np.mean(self.final_grads))
-            print("Median Gradient:", np.median(self.final_grads))
+            print("Minimum Undelayed Gradient:", np.min(self.final_grads))
+            print("Mean Undelayed Gradient:", np.mean(self.final_grads))
+            print("Median Undelayed Gradient:", np.median(self.final_grads))
         
      
     def save_vals(self, filename):
@@ -993,7 +971,6 @@ class Analyzer:
         self.__dict__['final_grads'] = [self.grad_vals[i][-1] for i in 
                                         range(len(self.grad_vals))]
         
-            
         
     def delete_initials(self):
         """Deletes all initialized points"""
