@@ -1,9 +1,8 @@
-# delay_types.py
+# DelayTypes.py
 
 """Functions defining the different delay types"""
 
 import numpy as np
-
 
 def undelayed(n, **kwargs):
     """Returns the arguments for undelayed optimization"""
@@ -21,7 +20,7 @@ def stochastic(n, **kwargs):
     return {'delayed':True, 'D':None, 'random':True, **kwargs}
 
 
-def decaying(n, max_L=1, maxiter=2000, stochastic=False, **kwargs):
+def decaying(n, max_L=2, num_delays=1000, stochastic=False, **kwargs):
     """Returns the arguments for decaying delayed optimization.
         stochastic (bool): whether to perform stochastic or uniform delays
                            on the decaying max_L
@@ -29,9 +28,7 @@ def decaying(n, max_L=1, maxiter=2000, stochastic=False, **kwargs):
     *Basically guarantees that delays are smaller the more iters have passed*
     """
     # Get array of decaying max_Ls
-    m = maxiter / (max_L+1)
-    L = np.repeat(np.arange(max_L+1)[::-1], m)
-    L = np.pad(L, (0,maxiter-len(L)))
+    L = [max_L - int(t*max_L/num_delays) for t in range(num_delays)]
     
     # Define delays
     if stochastic is True:
@@ -39,35 +36,34 @@ def decaying(n, max_L=1, maxiter=2000, stochastic=False, **kwargs):
     else:
         D = [l*np.ones(n, dtype=int) for l in L]
         
-    kwargs['maxiter'] = maxiter
-    kwargs['num_delays'] = maxiter
+    kwargs['num_delays'] = num_delays
     
     return {'delayed':True, 'D':D, 'random':False, **kwargs}
 
 
-def partial(n, max_L=1, maxiter=2000, stochastic=False, p=0.5, **kwargs):
+def partial(n, max_L=1, num_delays=1000, stochastic=False, p=0.5, **kwargs):
     """Returns the arguments for partial delayed optimization.
         p (float): percent of the dimensions to delay
         
     *Basically guarantees that p percent of dimensions are delayed each iter*
     """
-    # Determine how many dimensions are delayed
-    d = int(n*p)
-    if d == 0: 
-        d = 1
+    # Determine how many coordinates are delayed
+    d = max(int(n*p),1)
     
     # Choose which dimensions to delay at each time step
     dims = [np.random.choice(np.arange(0,n), replace=False, size=d) 
-            for i in range(maxiter)]
+            for i in range(num_delays)]
     
     # Define delays
-    D = [np.zeros(n, dtype=int) for i in range(maxiter)]
+    D = [np.zeros(n, dtype=int) for i in range(num_delays)]
     if stochastic is True:
-        for i in range(maxiter):
+        for i in range(num_delays):
             D[i][dims[i]] = np.random.randint(1, max_L+1, size=d)
     else:
-        for i in range(maxiter):
+        for i in range(num_delays):
             D[i][dims[i]] = max_L
+            
+    kwargs['num_delays'] = num_delays
     
     return {'delayed':True, 'D':D, 'random':False, **kwargs}
 

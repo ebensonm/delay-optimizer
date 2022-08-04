@@ -3,6 +3,8 @@
 import numpy as np
 import pandas as pd
 import pickle
+import bz2
+import _pickle as cPickle
 import itertools
 from matplotlib import pyplot as plt
 from matplotlib import ticker
@@ -295,7 +297,8 @@ class Analyzer:
             # Initialize
             self.initialize_vars(**kwargs)
             self.initialize_optimizer(delayed)
-            self.initialize_delayer()
+            self.initialize_delayer(compute_loss=save_loss,
+                                    save_grad=save_grad)
             
             for x_init in self.x_inits:
                 # Perform the optimization for each initial point 
@@ -347,7 +350,7 @@ class Analyzer:
         return
             
          
-    def add_initial_vals(self, delayed, save_loss=True, save_grad=True):
+    def add_initial_vals(self, delayed, save_loss=True, save_grad=False):
         """The Delayer class does not include the loss or gradient values for 
         the initial points in the time series. This function adds those values 
         to the respective class attributes.
@@ -878,8 +881,7 @@ class Analyzer:
         
         
     def optimize(self, num_points, sample, delayed, points=None, 
-                 print_vals='loss', clear_data=False, 
-                 **kwargs):
+                 print_vals='loss', clear_data=False, **kwargs):
         """Quick start function for optimization. Initializes points, computes 
         save values, and prints loss/gradient values.
         
@@ -904,9 +906,9 @@ class Analyzer:
             
     def get_mean_loss(self, delayed):
         if delayed is True:
-            return np.mean(self.final_losses)
-        else:
             return np.mean(self.del_final_losses)
+        else:
+            return np.mean(self.final_losses)
         
         
     def print_vals(self, vals, delayed):
@@ -948,28 +950,109 @@ class Analyzer:
         
      
     def save_vals(self, filename):
+        """Save Analyzer attributes as a pickle file"""
         attr_dict = self.__dict__.copy()
         
         # Drop attributes from dictionary
-        drops=['loss', 'grad', 'final_states', 'final_losses', 'final_grads']
+        drops = ['loss', 'grad', 'final_states', 'final_losses', 'final_grads',
+                 'del_final_states', 'del_final_losses', 'del_final_grads']
         for attr in drops:
             attr_dict.pop(attr)
         
+        # Save
         with open(filename, 'wb') as file:
             pickle.dump(attr_dict, file)
             
     
     def load_vals(self, filename):
+        """Load Analyzer attributes from a pickle file"""
+        # Load attribute dictionary
         with open(filename, 'rb') as file:
             attr_dict = pickle.load(file)
+            
+        # Check that file function data matches Analyzer instance
+        if (attr_dict['loss_name'] == self.loss_name and attr_dict['n'] 
+            == self.n):
+            self.__dict__.update(attr_dict)
+        else:
+            raise ValueError("Functions from Analyzer instance and file data "
+                             "do not match. Data was not loaded.")
         
-        self.__dict__.update(attr_dict)
-        self.__dict__['final_states'] = [self.time_series[i][-1] for i in 
-                                         range(len(self.time_series))]
-        self.__dict__['final_losses'] = [self.loss_vals[i][-1] for i in 
-                                         range(len(self.loss_vals))]
-        self.__dict__['final_grads'] = [self.grad_vals[i][-1] for i in 
-                                        range(len(self.grad_vals))]
+        # Interpolate final values
+        if len(self.time_series) != 0:
+            self.__dict__['final_states'] = [self.time_series[i][-1] for i in 
+                                             range(len(self.time_series))]
+        if len(self.del_time_series) != 0:
+            self.__dict__['del_final_states'] = [self.time_series[i][-1] for i 
+                                                 in range(len(
+                                                     self.del_time_series))]
+        if len(self.loss_vals) != 0:
+            self.__dict__['final_losses'] = [self.loss_vals[i][-1] for i in 
+                                             range(len(self.loss_vals))]
+        if len(self.del_loss_vals) != 0:
+            self.__dict__['del_final_losses'] = [self.loss_vals[i][-1] for i in 
+                                                 range(len(
+                                                     self.del_loss_vals))]
+        if len(self.loss_vals) != 0:
+            self.__dict__['final_grads'] = [self.loss_vals[i][-1] for i in 
+                                             range(len(self.grad_vals))]
+        if len(self.del_loss_vals) != 0:
+            self.__dict__['del_final_grads'] = [self.loss_vals[i][-1] for i in 
+                                                 range(len(
+                                                     self.del_grad_vals))]
+            
+            
+    def compress(self, filename):
+        """Save Analyzer attributes to a compressed .pbz2 file"""
+        attr_dict = self.__dict__.copy()
+        
+        # Drop attributes from dictionary
+        drops = ['loss', 'grad', 'final_states', 'final_losses', 'final_grads',
+                 'del_final_states', 'del_final_losses', 'del_final_grads']
+        for attr in drops:
+            attr_dict.pop(attr)
+        
+        # Compress and save
+        with bz2.BZ2File(filename, 'w') as file: 
+            cPickle.dump(attr_dict, file)
+            
+            
+    def decompress(self, filename):
+        """Extract and load data from a compressed .pbz2 file"""
+        # Load attribute dictionary
+        data = bz2.BZ2File(filename, 'rb')
+        attr_dict = cPickle.load(data)
+            
+        # Check that file function data matches Analyzer instance
+        if (attr_dict['loss_name'] == self.loss_name and attr_dict['n'] 
+            == self.n):
+            self.__dict__.update(attr_dict)
+        else:
+            raise ValueError("Analyzer instance and file data functions do not"
+                             " match. Data was not loaded.")
+        
+        # Interpolate final values
+        if len(self.time_series) != 0:
+            self.__dict__['final_states'] = [self.time_series[i][-1] for i in 
+                                             range(len(self.time_series))]
+        if len(self.del_time_series) != 0:
+            self.__dict__['del_final_states'] = [self.time_series[i][-1] for i 
+                                                 in range(len(
+                                                     self.del_time_series))]
+        if len(self.loss_vals) != 0:
+            self.__dict__['final_losses'] = [self.loss_vals[i][-1] for i in 
+                                             range(len(self.loss_vals))]
+        if len(self.del_loss_vals) != 0:
+            self.__dict__['del_final_losses'] = [self.loss_vals[i][-1] for i in 
+                                                 range(len(
+                                                     self.del_loss_vals))]
+        if len(self.loss_vals) != 0:
+            self.__dict__['final_grads'] = [self.loss_vals[i][-1] for i in 
+                                             range(len(self.grad_vals))]
+        if len(self.del_loss_vals) != 0:
+            self.__dict__['del_final_grads'] = [self.loss_vals[i][-1] for i in 
+                                                 range(len(
+                                                     self.del_grad_vals))]
         
         
     def delete_initials(self):
