@@ -73,8 +73,8 @@ class Analyzer:
         
     def initialize_functions(self):
         """Initializes the loss and gradient functions based on loss_name. 
-        Also initilizes the default range grid and the known minimizer 
-        for the function.
+        Also initilizes the default range grid and the known minimizer for the 
+        function.
         """
         if self.loss_name == 'Rosenbrock':
             self.loss = functions.rosenbrock_gen(self.n)
@@ -106,14 +106,12 @@ class Analyzer:
         computed.
         """
         # Get the data we need
-        hyperparams = pd.read_csv('../final_params.csv')
+        hyperparams = pd.read_csv('../final_params.csv', index_col=0)
         params = hyperparams[hyperparams["loss_name"] == self.loss_name]
         params = params[params["dim"] == self.n]
-        if len(params[params["max_L"] == self.max_L]) != 0:
-            params = params[params["max_L"] == self.max_L]
         
         # Separate and organize the values we need
-        params = params.drop(columns=['loss_name','dim','max_L'])
+        params = params.drop(columns=['loss_name','dim','max_L','delay_type'])
         del_params = params[params.use_delays == True]
         undel_params = params[params.use_delays == False]
         
@@ -129,7 +127,7 @@ class Analyzer:
                            'min_learning_rate': 0.23,
                            'step_size': 740.}
         else:
-            self.params = list(params)[0]
+            self.params = list(undel_params)[0]
             
         # Set delayed params
         if len(list(del_params)) == 0:
