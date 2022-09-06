@@ -79,22 +79,22 @@ class Analyzer:
         if self.loss_name == 'Rosenbrock':
             self.loss = functions.rosenbrock_gen(self.n)
             self.grad = functions.rosen_deriv_gen(self.n)
-            self.range_grid = [-10.,10.]
+            self.range_grid = [-5., 10.]
             self.minimizer = np.ones(self.n)
         elif self.loss_name == 'Zakharov':
             self.loss = functions.zakharov_gen(self.n)
             self.grad = functions.zakharov_deriv_gen(self.n)
-            self.range_grid = [-10.,10.]
+            self.range_grid = [-5., 10.]
             self.minimizer = np.zeros(self.n)
         elif self.loss_name == 'Ackley':
             self.loss = functions.ackley_gen(self.n)
             self.grad = functions.ackley_deriv_gen(self.n)
-            self.range_grid = [-32.,32.]
+            self.range_grid = [-32.768, 32.768]
             self.minimizer = np.zeros(self.n)
         elif self.loss_name == 'Rastrigin':
             self.loss = functions.rastrigin_gen(self.n)
             self.grad = functions.rast_deriv_gen(self.n)
-            self.range_grid = [-32.,32.]
+            self.range_grid = [-5.12, 5.12]
             self.minimizer = np.zeros(self.n)
         else:
             raise ValueError("The '{}' function has not been implemented."\

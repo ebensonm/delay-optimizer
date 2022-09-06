@@ -55,22 +55,22 @@ class FuncOpt:
         if self.loss_name == 'Rosenbrock':
             self.loss = functions.rosenbrock_gen(self.n)
             self.grad = functions.rosen_deriv_gen(self.n)
-            self.domain = [-10.,10.]
+            self.domain = [-5., 10.]
             self.minimizer = np.ones(self.n)
         elif self.loss_name == 'Zakharov':
             self.loss = functions.zakharov_gen(self.n)
             self.grad = functions.zakharov_deriv_gen(self.n)
-            self.domain = [-10.,10.]
+            self.domain = [-5., 10.]
             self.minimizer = np.zeros(self.n)
         elif self.loss_name == 'Ackley':
             self.loss = functions.ackley_gen(self.n)
             self.grad = functions.ackley_deriv_gen(self.n)
-            self.domain = [-32.,32.]
+            self.domain = [-32.768, 32.768]
             self.minimizer = np.zeros(self.n)
         elif self.loss_name == 'Rastrigin':
             self.loss = functions.rastrigin_gen(self.n)
             self.grad = functions.rast_deriv_gen(self.n)
-            self.domain = [-32.,32.]
+            self.domain = [-5.12, 5.12]
             self.minimizer = np.zeros(self.n)
         else:
             raise ValueError("The '{}' function has not been implemented."\
@@ -111,9 +111,11 @@ class FuncOpt:
                 
     def initialize_optimizer(self, lr_params, beta_1=0.9, beta_2=0.999):
         """Initializes the optimizer and its parameters."""
+        const_lr = ('learning_rate' in lr_params)
         if self.optimizer_name == 'Adam':
             params = {'beta_1': beta_1, 'beta_2': beta_2}
-            params['learning_rate'] = generate_learning_rates(False, lr_params)
+            params['learning_rate'] = generate_learning_rates(const_lr, 
+                                                              lr_params)
             self.optimizer = optimizers.Adam(params)
         else:
             raise ValueError("The '{}' optimizer has not been implemented."\
@@ -128,52 +130,61 @@ class FuncOpt:
                                save_grad)            
                 
                 
-    def get_params(self, delay_type, param_type='optimal', 
+    def get_params(self, delay_type, param_type='optimal', const_lr=False,
                    filename='../final_params.csv', **kwargs):
-        # Get the data we need and filter by function
-        params = pd.read_csv(filename, index_col=0)
-        params = params[params.loss_name == self.loss_name]
-        params = params[params.dim == self.n]
-        
+        # Check if param_type does not require data lookup
         if param_type=='default':
-            return {'max_learning_rate': 2.98, 'min_learning_rate': 0.23, 
-                    'step_size': 740.}
-        
+            if const_lr is True:
+                return {'learning_rate': 1.0}
+            else:
+                return {'max_learning_rate': 2.98, 'min_learning_rate': 0.23, 
+                        'step_size': 740.}
         elif param_type=='given':
-            return {'max_learning_rate': kwargs['max_learning_rate'], 
-                    'min_learning_rate': kwargs['min_learning_rate'], 
-                    'step_size': kwargs['step_size']}
+            if const_lr is True:
+                return {'learning_rate': kwargs['learning_rate']}
+            else:
+                return {'max_learning_rate': kwargs['max_learning_rate'], 
+                        'min_learning_rate': kwargs['min_learning_rate'], 
+                        'step_size': kwargs['step_size']}
+        else:   # Parameter type requires data lookup
+            params = pd.read_csv(filename, index_col=0)         # Get data
+            params = params[params.loss_name == self.loss_name] # Filter
+            params = params[params.dim == self.n]
+            params = params[params.constant_learning_rate == const_lr]
+            if const_lr is True:    # Remove null parameters
+                params = params.drop(columns=['max_learning_rate',
+                                              'min_learning_rate','step_size'])
+            else:
+                params = params.drop(columns=['learning_rate'])
         
-        elif param_type=='undelayed' or delay_type.name=='undelayed':
+        # Filter for specified parameters
+        if param_type=='undelayed' or delay_type.name=='undelayed':
             params = params[params.use_delays == False]
-            params = params.drop(columns=['loss_name','dim','max_L',
-                                          'delay_type','use_delays'])
-            params = params.to_dict('index').values()
-            
         elif param_type=='optimal':
-            # Get specified delayed parameters
             params = params[params.use_delays == True]
             params = params[params.max_L == delay_type.max_L]
-            params = params[params.delay_type == delay_type.name]  
-            params = params.drop(columns=['loss_name','dim','max_L',
-                                          'delay_type','use_delays'])
-            params = params.to_dict('index').values()
-            
+            params = params[params.delay_type == delay_type.name]
         else:
             raise ValueError("Invalid parameter type.")
         
-        if len(list(params)) > 0 :
+        # Drop nonparameter values
+        params = params.drop(columns=['loss_name','dim','max_L', 'delay_type',
+                                      'use_delays'])
+        params = params.to_dict('index').values()
+        
+        # Return parameters if they exist
+        if len(list(params)) > 0 :  
             return list(params)[0]
-        else:
+        else:   # No existing parameters; use default parameters
             warnings.warn("No optimal hyperparameters found. Using "
                           "default hyperparameters.")
             return self.get_params(delay_type, param_type='default')
 
 
-    def optimize(self, delay_type, param_type='optimal',  break_opt=True, 
-                 save_state=True, save_loss=True, save_grad=False, 
-                 save_iters=True, param_file='../final_params.csv',
-                 **kwargs):
+    def optimize(self, delay_type, param_type='optimal', break_opt=True, 
+                 const_lr=False, save_state=True, save_loss=True, 
+                 save_grad=False, save_iters=True, 
+                 param_file='../final_params.csv', **kwargs):
         """Run the optimization on the initial points already initialized and 
         saves values to be plotted.
         
@@ -194,8 +205,8 @@ class FuncOpt:
         # Initialize
         self.delete_data()
         self.delay_type = delay_type
-        self.lr_params = self.get_params(delay_type, param_type, param_file, 
-                                         **kwargs)   
+        self.lr_params = self.get_params(delay_type, param_type, const_lr, 
+                                         param_file, **kwargs)   
         self.initialize_optimizer(self.lr_params)
         self.initialize_delayer(save_state, save_loss, save_grad)
             
