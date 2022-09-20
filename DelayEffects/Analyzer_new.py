@@ -130,7 +130,7 @@ class FuncOpt:
                                save_grad)            
                 
                 
-    def get_params(self, delay_type, param_type='optimal', const_lr=False,
+    def get_params(self, delay_type, param_type='optimal', const_lr=True,
                    filename='../final_params.csv', **kwargs):
         # Check if param_type does not require data lookup
         if param_type=='default':
@@ -150,7 +150,6 @@ class FuncOpt:
             params = pd.read_csv(filename, index_col=0)         # Get data
             params = params[params.loss_name == self.loss_name] # Filter
             params = params[params.dim == self.n]
-            params = params[params.constant_learning_rate == const_lr]
             if const_lr is True:    # Remove null parameters
                 params = params.drop(columns=['max_learning_rate',
                                               'min_learning_rate','step_size'])
@@ -182,7 +181,7 @@ class FuncOpt:
 
 
     def optimize(self, delay_type, param_type='optimal', break_opt=True, 
-                 const_lr=False, save_state=True, save_loss=True, 
+                 const_lr=True, save_state=True, save_loss=True, 
                  save_grad=False, save_iters=True, 
                  param_file='../final_params.csv', **kwargs):
         """Run the optimization on the initial points already initialized and 
