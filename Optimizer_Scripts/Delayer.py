@@ -194,6 +194,7 @@ class Delayer:
             else:
                 new_value = self.no_delay(index_val=index_val, i=i)  #get the update value without delays   
             x_state_new = new_value  #update the value
+            x_state_new = x_state_new.reshape(-1)
             x_state_old = self.add_new_state(save_time_series, x_state_new,i) #add the state to the time series
             #track losses over time (temporal complexity dependent on computation cost of functional value)
             if self.compute_loss is True:

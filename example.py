@@ -3,20 +3,18 @@ from Optimizer_Scripts.Delayer import Delayer
 from Optimizer_Scripts.learning_rate_generator import generate_learning_rates
 import numpy as np
 from matplotlib import pyplot as plt
-plt.rcParams['figure.dpi']= 800
+plt.rcParams['figure.dpi']= 100
 
 
 if __name__ == "__main__":
     #define the constants
-    n = 2
-    max_learning_rate = 1.5
-    min_learning_rate = 0.1
-    step_size = 500
+    n = 1000
+    learning_rate = 1.5
     epsilon = 1e-7
-    beta_1 = 0.99
+    beta_1 = 0.9
     beta_2 = 0.999
     L=1
-    num_delays=1000
+    num_delays=5000
     params = dict()
     params['beta_1'] = beta_1
     params['beta_2'] = beta_2
@@ -27,13 +25,12 @@ if __name__ == "__main__":
     cost_gradient = functions.ackley_deriv_gen(n)
     #now generate the learning rate and get the optimizer
     lr_params = dict()
-    lr_params['step_size'] = step_size
-    lr_params['max_learning_rate'] = max_learning_rate
-    lr_params['min_learning_rate'] = min_learning_rate
-    params['learning_rate'] = generate_learning_rates(constant_lr = False, params = lr_params)
+    lr_params['learning_rate'] = learning_rate
+    params['learning_rate'] = generate_learning_rates(constant_lr = True, params = lr_params)
     optimizer = optimizers.Adam(params=params, epsilon=epsilon)
     #use the Delayer class to add time delays to the optimizer
-    delayed_optimizer = Delayer(n, optimizer, cost, cost_gradient, max_L=L, num_delays=num_delays,
+    delayed_optimizer = Delayer(n=n, optimizer=optimizer, loss_function=cost, 
+                                grad=cost_gradient, max_L=L, num_delays=num_delays,
                                 compute_loss=True, print_log=True, save_grad=True)
     delayed_optimizer.x_init = x_init
     #run the optimizer
