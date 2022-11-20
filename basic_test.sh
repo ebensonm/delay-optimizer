@@ -13,7 +13,7 @@ source activate HyperOpt
 ray start --head
 sleep 10
 ray status
-RAY_ADDRESS=auto python -u HypOpConstantLR.py --dim 10 
+RAY_ADDRESS=auto python -u HypOpConstantLR.py --dim 10
 --max_delay 1 --num_delays 10000 --use_delays False --maxiter 1000 \
 --cost_function "rosenbrock" --tol 1e-5 --num_runs 5 \
 --filename "Rosenbrock_Basic" --num_initials 5 \
