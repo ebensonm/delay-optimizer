@@ -6,9 +6,8 @@
 #SBATCH --mem-per-cpu=5000M   # memory per CPU core
 #SBATCH -J  "10000Test"   # job name
 
-module load python/3.8
 module load miniconda3/4.6
-source activate HyperOpt
+source activate HypOpt
 
 ray start --head
 sleep 10
