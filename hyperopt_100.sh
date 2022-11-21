@@ -2,7 +2,7 @@
 
 #SBATCH --time=8:00:00   # walltime
 #SBATCH --ntasks=50   # number of processor cores (i.e. tasks)
-#SBATCH --nodes=2  # number of nodes
+#SBATCH --nodes=5  # number of nodes
 #SBATCH --mem-per-cpu=5000M   # memory per CPU core
 #SBATCH -J  "100Test"   # job name
 
