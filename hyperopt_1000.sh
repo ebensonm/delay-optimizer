@@ -47,14 +47,14 @@ RAY_ADDRESS=auto python -u HypOpConstantLR.py --dim 1000 \
 --cost_function "zakharov" --tol 1e-5 --num_runs 20 \
 --filename "Zakharov_UnDelayed_1000" --num_initials 20 \
 --num_processes 49 --bayesian_samples 5 --grid_samples 25 \
---ranges_0 0.0 --ranges_1 5.0
+--ranges_0 1.0 --ranges_1 5.0
 
 RAY_ADDRESS=auto python -u HypOpConstantLR.py --dim 1000 \
 --max_delay 1 --num_delays 10000 --use_delays True --maxiter 5000 \
 --cost_function "zakharov" --tol 1e-5 --num_runs 20 \
 --filename "Zakharov_Delayed_1000" --num_initials 20 \
 --num_processes 49 --bayesian_samples 5 --grid_samples 25 \
---ranges_0 0.0 --ranges_1 5.0
+--ranges_0 1.0 --ranges_1 5.0
 
 ray status
 RAY_ADDRESS=auto python -u HypOpConstantLR.py --dim 1000 \
