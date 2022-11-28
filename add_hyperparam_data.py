@@ -6,27 +6,28 @@ stored in .json files
 
 import pandas as pd
 import os
+import json
 import glob
 
 csv_name = "hyperparameter_data.csv"
 
 dfs = []
 file_list = glob.glob('*.json')                    # Get all .json files
-
+columns = None
+frame = pd.DataFrame()  #initialize the data frame
+series_list=[]
 for filename in file_list:
-    data = pd.read_json(filename, orient='index')  # Read the .json file
+    with open(filename) as json_file:
+        data = json.load(json_file) #read the json file as dictionary 
     
     # Get the params from the best_params column and join to the data
-    params = pd.Series(data.loc["best_params"][0]).to_frame().transpose()
-    data = data.drop("best_params").transpose().join(params)
+    series_list.append(pd.Series(data))
+    os.remove(filename)
+
+df = pd.concat(series_list,axis=1)   # Get a dataframe of all .json data
+if os.path.exists(csv_name):    #read current data to append to other data
+    current_data = pd.read_csv(csv_name, header=None, index_col=0)
+    df = pd.concat([df, current_data],axis=1)
     
-    dfs.append(pd.DataFrame(data))
-
-df = pd.concat(dfs, ignore_index=True)   # Get a dataframe of all .json data
-
-# Write hyperparameter data to csv file
-if os.path.exists(csv_name):
-    df.to_csv(csv_name, index=False, header=False, mode='a')
-else:
-    df.to_csv(csv_name, index=False)
+df.to_csv(csv_name, index=True, header=False)
 

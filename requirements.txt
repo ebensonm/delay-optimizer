@@ -1,5 +1,10 @@
 numpy
-hyperopt
-mpi4py
+pandas
+GPy
+GPyOpt
+scipy
+sklearn
+json
+ray
 argparse
-julia
+glob
