@@ -9,7 +9,7 @@ import os
 import json
 import glob
 
-csv_name = "hyperparameter_data_varying_delays.csv"
+csv_name = "hyperparameter_data_lr_types_test.csv"
 
 dfs = []
 file_list = glob.glob('*.json')                    # Get all .json files
@@ -29,5 +29,5 @@ if os.path.exists(csv_name):    #read current data to append to other data
     current_data = pd.read_csv(csv_name, header=None, index_col=0)
     df = pd.concat([df, current_data],axis=1)
     
-df.to_csv(csv_name, index=True, header=False)
+df.to_csv('Results/{}'.format(csv_name), index=True, header=False)
 

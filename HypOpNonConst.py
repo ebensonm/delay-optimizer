@@ -15,18 +15,27 @@ import Optimizer_Scripts.learning_rate_generator as lrg
 
 def main(**args):
     #get the arguments and run the hyperparameter optimization
-    total_loss_function = get_loss_function(args)
+    param = lrg.get_param_dict(lr_type=args['lr_type'])
+    total_loss_function = get_loss_function(args, param)
     num_bay_runs = args['num_runs']
-    ranges = [args['max_range_0'],args['max_range_1']]
+    ranges = dict()
+    lr_ranges_min = [args['min_range_0'], args['min_range_1']]
+    lr_ranges_max = [args['max_range_0'], args['max_range_1']]
+    # add values to dictionary containing range values
+    ranges['max_lr'] = lr_ranges_max
+    ranges['min_lr'] = lr_ranges_min
+    p_ranges = [args['p_1'],args['p_2']]
+    ranges['p'] = p_ranges 
+    gamma_ranges = [args['gamma_1'],args['gamma_2']]
+    ranges['gamma'] = gamma_ranges
+    step_ranges = [args['step_1'],args['step_2']]
+    ranges['step'] = step_ranges
     bayesian_samples = args['bayesian_samples']
-    grid_samples = args['grid_samples']
-    grid_min, bay_min = run_hyperparameter_optimization(total_loss_function, num_bay_runs,
-                                                        ranges, bayesian_samples,
-                                                        grid_samples)
+    bay_min = run_hyperparameter_optimization(total_loss_function, num_bay_runs,
+                                                        ranges, bayesian_samples)
     #create the json file containing the relevant information
-    args['grid_min'] = grid_min
-    args['grid_cost'] = total_loss_function(grid_min)
-    args['max_lr'] = bay_min
+    for it, key in enumerate(param):
+        args[key] = bay_min[it]
     args['bay_cost'] = total_loss_function(bay_min)
     with open(args['filename']+'.json', 'w') as fp:
                 json.dump(args, fp, indent=4) 
@@ -34,7 +43,7 @@ def main(**args):
     print("File saved at {} in the current directory".format(args['filename']+'.json'))  
      
 
-def get_loss_function(args):
+def get_loss_function(args, param):
     num_initials = args['num_initials']
     n = args['dim']
     cost_function,grad,domain_0,domain_1 = get_cost_function(args['cost_function'], n)
@@ -44,33 +53,35 @@ def get_loss_function(args):
     num_delays = args['num_delays']
     maxiter = args['maxiter']
     tol = args['tol']
+    lr_type = args['lr_type']
     
     
-    def get_adam_optimizer(learning_rate):
-        param = dict()
-        param['learning_rate'] = learning_rate
+    def get_adam_optimizer(params):
+        for it, key in enumerate(param):
+            param[key] = params[it]
         opt_params = dict()
-        opt_params['learning_rate'] = lrg.constant(param)
+        opt_params['learning_rate'] = lrg.generate_learning_rates(lr_type, param)
         opt_params['beta_1'] = 0.9
         opt_params['beta_2'] = 0.999
         return Adam(opt_params)
         
         
-    def total_loss_function(learning_rate):
+    def total_loss_function(params):
         pool = Pool()
-        errors = pool.map(partial_loss_function, num_processes*[learning_rate])
+        params = np.ravel(params)
+        errors = pool.map(partial_loss_function, num_processes*[params])
         error = np.mean([errors])
         return error
 
 
-    def partial_loss_function(learning_rate):
+    def partial_loss_function(params):
         x_inits = np.random.uniform(domain_0, domain_1, (num_initials, n))
         error_value = 0
-        optimizer = get_adam_optimizer(learning_rate)
+        optimizer = get_adam_optimizer(params)
         for init in x_inits:
             my_opt = Delayer(n=n, x_init=init, optimizer=optimizer,
                              loss_function=cost_function, grad=grad, 
-                             max_L=max_delay, num_delays=10000)
+                             max_L=max_delay, num_delays=num_delays)
             my_opt.compute_time_series(use_delays=use_delays,maxiter=maxiter,tol=tol)
             error_value += my_opt.final_val
         error_value = error_value/num_initials
@@ -79,28 +90,26 @@ def get_loss_function(args):
     return total_loss_function 
 
 
-def grid_search(loss_function, ranges, num_points,tol=1e-3):
-    #do a grid search to try to narrow down our hyperparameter optimization search area
-    grid, retstep = np.linspace(ranges[0]+tol, ranges[1], num_points, retstep=True)
-    loss_values = [loss_function(lr) for lr in grid]
-    #return the smallest value
-    index = np.argmin(loss_values)
-    return grid[index], retstep
-
-
 def bayesian_optimization_gpy(loss_function, ranges, num_runs, num_points):
     #get the starting samples and reshape them to fit algorithm
-    learning_rate_samples = np.linspace(ranges[0],ranges[1],num_points)
-    loss_value_samples = np.asarray([loss_function(lr) for lr in learning_rate_samples]).reshape(-1,1)
-    learning_rate_samples = learning_rate_samples.reshape(-1,1)
+    samples_list = list()
+    bds = list()
+    for key in ranges:
+        value = ranges[key]
+        #get values from dictionary to generate samples
+        if (value[0] is not None and value[1] is not None):
+            samples = np.linspace(value[0], value[1], num_points)
+            samples_list.append(samples)
+            bds.append({'name':'{}'.format(key),'type':'continuous','domain':value})
+    samples_final = np.transpose(np.asarray(samples_list))
+    loss_value_samples = np.asarray([loss_function(loss_par) for loss_par in samples_final]).reshape(-1,1)
     #create the fitting kernel and run the algorithm
-    kernel = GPy.kern.Matern52(input_dim=1, variance=1.0, lengthscale=1.0)
-    bds = [{'name': 'X', 'type': 'continuous', 'domain': ranges}]
+    kernel = GPy.kern.Matern52(input_dim=len(bds), variance=1.0, lengthscale=1.0)
     optimizer = BayesianOptimization(f=loss_function, 
                                      domain=bds,
                                      model_type='GP',
                                      kernel=kernel,
-                                     X_init=learning_rate_samples,
+                                     X_init=samples_final,
                                      Y_init=loss_value_samples,
                                      acquisition_type='EI',
                                      acquisition_jitter=0.05,
@@ -116,23 +125,16 @@ def bayesian_optimization_gpy(loss_function, ranges, num_runs, num_points):
     return optimizer.X[np.argmin(optimizer.Y)]
     
 
-def run_hyperparameter_optimization(loss_function, num_runs, ranges, bayesian_samples, grid_samples):
+def run_hyperparameter_optimization(loss_function, num_runs, ranges, bayesian_samples):
     #initialize multiprocessing technique
-    grid_min, diff = grid_search(loss_function, ranges, grid_samples) #run the grid search
-    print("Minimum value on grid search is: {}".format(loss_function(grid_min)))
-    print("Optimal learning rate on grid search is: {}".format(grid_min))
-    #get new set of points and refine our search with Bayesian Hyperparameter optimization
-    bay_ranges = [np.max([0, grid_min-diff]), grid_min+diff]
-    bay_min = bayesian_optimization_gpy(loss_function, bay_ranges, num_runs, bayesian_samples)
-    print("Minimum value on Bayesion search is: {}".format(loss_function(bay_min[0])))
+    bay_min = bayesian_optimization_gpy(loss_function, ranges, num_runs, bayesian_samples)
+    print("Minimum value on Bayesion search is: {}".format(loss_function(bay_min)))
     print("Optimal learning rate on bayesion search is: {}".format(bay_min[0]))
     #return the minimum value of the two searches
-    return grid_min, bay_min[0]
+    return bay_min
 
 
 if __name__ == "__main__":
     #pass the command line arguments to the main function
     args = get_arguments()
     main(**vars(args))
-
-

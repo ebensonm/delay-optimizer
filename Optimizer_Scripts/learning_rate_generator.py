@@ -1,42 +1,106 @@
-def const_lr_gen(params):
+import numpy as np
+
+def constant(params):
+    """Yields a given constant learning rate
+    """
     GO = True
     learning_rate = params['learning_rate']
     while GO is True:
-       yield learning_rate
-
-def non_const_lr_gen(params):  
-    #dummy variable for running the generator
+       yield learning_rate     
+       
+       
+def step(params):
+    """Decaying learning rate, decaying by a parameter every step_size steps (stairs)
+    """
     GO = True
-    #counter for the iterations
-    counter = 0
-    #variable for how many iterations per triangle side
-    lr_num = params['step_size']
-    min_lr = params['min_learning_rate']
-    max_lr = params['max_learning_rate']
-    #compute the step size
-    dh = (max_lr - min_lr)/lr_num
-    #the learning rate starter
-    learning_rate = params['min_learning_rate'] - dh
-    counter_counter = 0
+    step_size=params['step_size']
+    lr = params['max_lr']
+    gamma = params['gamma']
+    old_lr = lr
+    iternum = 1
     while GO is True:
-        counter += 1
-        if (counter % lr_num == 0):
-            counter_counter += 1
-            #shrinking triangle part of the changing learning rate
-            if (counter_counter % 2 == 0):
-                max_lr -= (max_lr-min_lr)/2
-                dh = (max_lr - min_lr)/lr_num
-                counter_counter = 0
-            else:
-                dh = dh*-1
-            counter = 0
-        learning_rate += dh
-        yield learning_rate      
+        new_lr = old_lr*np.power(gamma,np.floor(iternum/step_size))
+        iternum += 1
+        yield new_lr
+       
+       
+def inv(params):
+    """Decaying by an inverse parameter every step size (smooth decay)
+    """
+    GO = True
+    gamma =params['gamma']
+    lr = params['max_lr']
+    p = params['p']
+    old_lr = lr
+    iternum = 1
+    while GO is True:
+        new_lr = old_lr*np.power(1/(1+iternum*gamma),p) 
+        iternum += 1
+        yield new_lr
         
-def generate_learning_rates(constant_lr, params):
+
+def tri_2(params):
+    """Decaying triangle learning rate schedule"""
+    GO = True
+    max_lr = params['max_lr']
+    min_lr = params['min_lr']
+    step_size = params['step_size']
+    old_lr = max_lr
+    iternum = 1
+    while GO is True:
+        value = 2/np.pi*np.absolute(np.arcsin(np.sin(np.pi*iternum/(2*step_size))))
+        new_lr = (1/np.power(2,np.floor(iternum/(2*step_size))))*np.absolute(max_lr-min_lr)*value+np.min((max_lr, min_lr))
+        iternum += 1
+        yield new_lr
+    
+    
+def sin_2(params):
+    """Decaying sin learning rate schedule"""
+    GO = True
+    max_lr = params['max_lr']
+    min_lr = params['min_lr']
+    step_size = params['step_size']
+    old_lr = max_lr
+    iternum = 1
+    while GO is True:
+        value = np.absolute(np.sin(np.pi*iternum/(2*step_size)))
+        new_lr = (1/np.power(2,np.floor(iternum/(2*step_size))))*np.absolute(max_lr-min_lr)*value+np.min((max_lr, min_lr))
+        iternum += 1
+        yield new_lr
+       
+    
+def get_param_dict(lr_type):
+    param = dict()
+    if (lr_type == 'step'):
+        key_list = ['max_lr', 'gamma', 'step_size'] 
+    
+    elif (lr_type =='inv'):
+        key_list = ['max_lr', 'p', 'gamma']
+    
+    elif (lr_type=='tri-2'):
+        key_list = ['max_lr', 'min_lr', 'step_size']
+    
+    elif (lr_type=='sin-2'):
+        key_list = ['max_lr', 'min_lr', 'step_size']
+    
+    else:
+        raise ValueError("Not a valid lr_type") 
+    for i in key_list:
+        param[i] = None
+    return param    
+        
+def generate_learning_rates(lr_type, params):
     """ Create the learning rate generator for constant and nonconstant learning rates
     """
-    if (constant_lr is True):
-        return const_lr_gen(params)
+    if (lr_type == 'const'):
+        return constant(params)
+    elif (lr_type == 'step'):
+        return step(params)
+    elif (lr_type == 'inv'):
+        return inv(params)
+    elif (lr_type == 'tri-2'):
+        return tri_2(params)
+    elif (lr_type == 'sin-2'):
+        return sin_2(params)
     else:
-        return non_const_lr_gen(params)
+        raise ValueError('{} is not a valid input for lr_type (type of learning rate to generate)'.format(lr_type))

@@ -99,23 +99,74 @@ def get_arguments(raw_args=None):
                         type=int, 
                         default=5
     )
-    parser.add_argument('--ranges_0',
-                        '-r',
-                        help=("The lowest value of the learning rate sampling range"),
+    parser.add_argument('--max_range_0',
+                        '-dl',
+                        help=("The lowest value of the min learning rate sampling range"),
                         type=float, 
-                        default=0.0
+                        default=None
     )
-    parser.add_argument('--ranges_1',
-                        '-k',
-                        help=("The highest value of the learning rate sampling range"),
+    parser.add_argument('--max_range_1',
+                        '-bc',
+                        help=("The highest value of the max learning rate sampling range"),
+                        type=float,
+                        default=None
+    )
+    parser.add_argument('--min_range_0',
+                        '-hd',
+                        help=("The lowest value of the min learning rate sampling range"),
                         type=float, 
-                        default=2.0
+                        default=None
     )
-    
-    
+    parser.add_argument('--min_range_1',
+                        '-i',
+                        help=("The highest value of the min learning rate sampling range"),
+                        type=float, 
+                        default=None
+    )
+    parser.add_argument('--lr_type',
+                        '-q',
+                        help=("The type of learning rate schedule to use"),
+                        type=str, 
+                        default='step'
+    )
+    parser.add_argument('--gamma_1',
+                        '-x',
+                        help=("the lowest value of the gamma sampling range"),
+                        type=float,
+                        default=None
+    )
+    parser.add_argument('--gamma_2',
+                        '-v',
+                        help=("the highest value of the gamma sampling range"),
+                        type=float,
+                        default=None
+    )
+    parser.add_argument('--p_1',
+                        '-o',
+                        help=("The lowest value of the p sampling range"),
+                        type=float,
+                        default=None
+    )
+    parser.add_argument('--p_2',
+                        '-j',
+                        help=("The highest value of the p sampling range"),
+                        type=float,
+                        default=None
+    )
+    parser.add_argument('--step_1',
+                        '-s',
+                        help=("The lowest value of the step size sampling range"),
+                        type=float,
+                        default=None
+    )
+    parser.add_argument('--step_2',
+                        '-tz',
+                        help=("The highest value of the step size sampling range"),
+                        type=float,
+                        default=None
+    )    
     args = parser.parse_args(raw_args)
     return args
-
 
 def get_cost_function(function_name='ackley', dimension=10):
     
