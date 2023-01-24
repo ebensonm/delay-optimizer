@@ -12,6 +12,7 @@ source activate HypOpt
 ray start --head
 sleep 10
 ray status
+
 RAY_ADDRESS=auto python -u HypOpNonConst.py \
 --dim 2 --max_delay 1 --num_delays 10000 \
 --use_delays False --maxiter 5000 \
