@@ -4,7 +4,7 @@
 #SBATCH --ntasks=50   # number of processor cores (i.e. tasks)
 #SBATCH --nodes=5  # number of nodes
 #SBATCH --mem-per-cpu=8000M   # memory per CPU core
-#SBATCH -J  "VaryLR"   # job name
+#SBATCH -J  "DelTOff"   # job name
 
 module load miniconda3/4.6
 source activate HypOpt
