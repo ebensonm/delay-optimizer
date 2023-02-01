@@ -17,103 +17,80 @@ RAY_ADDRESS=auto python -u HypOpConstantLR.py \
 --dim 1000 --max_delay 1 --num_delays 1000 \
 --use_delays True --maxiter 5000 \
 --cost_function "ackley" --tol 1e-5 --num_runs 20 \
---filename "Ackley_Delayed_TF_1000" --num_initials 20 \
---num_processes 2 --bayesian_samples 5 --grid_samples 15 \
+--filename "Ackley_Delayed_TF0_1000" --num_initials 20 \
+--num_processes 49 --bayesian_samples 5 --grid_samples 15 \
 --max_range_0 0.0 --max_range_1 4.0
-
-python add_hyperparam_data.py
-
 
 RAY_ADDRESS=auto python -u HypOpConstantLR.py \
 --dim 1000 --max_delay 1 --num_delays 1000 \
 --use_delays True --maxiter 5000 \
 --cost_function "zakharov" --tol 1e-5 --num_runs 20 \
---filename "Zakharov_Delayed_TF_1000" --num_initials 20 \
---num_processes 2 --bayesian_samples 5 --grid_samples 20 \
+--filename "Zakharov_Delayed_TF0_1000" --num_initials 20 \
+--num_processes 49 --bayesian_samples 5 --grid_samples 20 \
 --max_range_0 0.0 --max_range_1 7.0
-
-python add_hyperparam_data.py
 
 RAY_ADDRESS=auto python -u HypOpConstantLR.py \
 --dim 1000 --max_delay 1 --num_delays 1000 \
 --use_delays True --maxiter 5000 \
 --cost_function "ackley" --tol 1e-5 --num_runs 20 \
---filename "Ackley_Delayed_TF_1000" --num_initials 20 \
---num_processes 2 --bayesian_samples 5 --grid_samples 15 \
+--filename "Ackley_Delayed_TF1_1000" --num_initials 20 \
+--num_processes 49 --bayesian_samples 5 --grid_samples 15 \
 --max_range_0 0.0 --max_range_1 4.0
-
-python add_hyperparam_data.py
-
 
 RAY_ADDRESS=auto python -u HypOpConstantLR.py \
 --dim 1000 --max_delay 1 --num_delays 1000 \
 --use_delays True --maxiter 5000 \
 --cost_function "zakharov" --tol 1e-5 --num_runs 20 \
---filename "Zakharov_Delayed_TF_1000" --num_initials 20 \
---num_processes 2 --bayesian_samples 5 --grid_samples 20 \
+--filename "Zakharov_Delayed_TF1_1000" --num_initials 20 \
+--num_processes 49 --bayesian_samples 5 --grid_samples 20 \
 --max_range_0 0.0 --max_range_1 7.0
-
-python add_hyperparam_data.py
 
 RAY_ADDRESS=auto python -u HypOpConstantLR.py \
 --dim 1000 --max_delay 1 --num_delays 1000 \
 --use_delays True --maxiter 5000 \
 --cost_function "ackley" --tol 1e-5 --num_runs 20 \
---filename "Ackley_Delayed_TF_1000" --num_initials 20 \
---num_processes 2 --bayesian_samples 5 --grid_samples 15 \
+--filename "Ackley_Delayed_TF2_1000" --num_initials 20 \
+--num_processes 49 --bayesian_samples 5 --grid_samples 15 \
 --max_range_0 0.0 --max_range_1 4.0
-
-python add_hyperparam_data.py
-
 
 RAY_ADDRESS=auto python -u HypOpConstantLR.py \
 --dim 1000 --max_delay 1 --num_delays 1000 \
 --use_delays True --maxiter 5000 \
 --cost_function "zakharov" --tol 1e-5 --num_runs 20 \
---filename "Zakharov_Delayed_TF_1000" --num_initials 20 \
---num_processes 2 --bayesian_samples 5 --grid_samples 20 \
+--filename "Zakharov_Delayed_TF2_1000" --num_initials 20 \
+--num_processes 49 --bayesian_samples 5 --grid_samples 20 \
 --max_range_0 0.0 --max_range_1 7.0
-
-python add_hyperparam_data.py
 
 RAY_ADDRESS=auto python -u HypOpConstantLR.py \
 --dim 1000 --max_delay 1 --num_delays 1000 \
 --use_delays True --maxiter 5000 \
 --cost_function "ackley" --tol 1e-5 --num_runs 20 \
---filename "Ackley_Delayed_TF_1000" --num_initials 20 \
---num_processes 2 --bayesian_samples 5 --grid_samples 15 \
+--filename "Ackley_Delayed_TF3_1000" --num_initials 20 \
+--num_processes 49 --bayesian_samples 5 --grid_samples 15 \
 --max_range_0 0.0 --max_range_1 4.0
-
-python add_hyperparam_data.py
-
 
 RAY_ADDRESS=auto python -u HypOpConstantLR.py \
 --dim 1000 --max_delay 1 --num_delays 1000 \
 --use_delays True --maxiter 5000 \
 --cost_function "zakharov" --tol 1e-5 --num_runs 20 \
---filename "Zakharov_Delayed_TF_1000" --num_initials 20 \
---num_processes 2 --bayesian_samples 5 --grid_samples 20 \
+--filename "Zakharov_Delayed_TF3_1000" --num_initials 20 \
+--num_processes 49 --bayesian_samples 5 --grid_samples 20 \
 --max_range_0 0.0 --max_range_1 7.0
-
-python add_hyperparam_data.py
 
 RAY_ADDRESS=auto python -u HypOpConstantLR.py \
 --dim 1000 --max_delay 1 --num_delays 1000 \
 --use_delays True --maxiter 5000 \
 --cost_function "ackley" --tol 1e-5 --num_runs 20 \
---filename "Ackley_Delayed_TF_1000" --num_initials 20 \
---num_processes 2 --bayesian_samples 5 --grid_samples 15 \
+--filename "Ackley_Delayed_TF4_1000" --num_initials 20 \
+--num_processes 49 --bayesian_samples 5 --grid_samples 15 \
 --max_range_0 0.0 --max_range_1 4.0
-
-python add_hyperparam_data.py
-
 
 RAY_ADDRESS=auto python -u HypOpConstantLR.py \
 --dim 1000 --max_delay 1 --num_delays 1000 \
 --use_delays True --maxiter 5000 \
 --cost_function "zakharov" --tol 1e-5 --num_runs 20 \
---filename "Zakharov_Delayed_TF_1000" --num_initials 20 \
---num_processes 2 --bayesian_samples 5 --grid_samples 20 \
+--filename "Zakharov_Delayed_TF4_1000" --num_initials 20 \
+--num_processes 49 --bayesian_samples 5 --grid_samples 20 \
 --max_range_0 0.0 --max_range_1 7.0
 
 python add_hyperparam_data.py
