@@ -1,4 +1,4 @@
-# DelayedOptimizer.py
+# Delayer.py
 
 import numpy as np
 import time
