@@ -104,7 +104,7 @@ def bayesian_optimization_gpy(loss_function, ranges, num_runs, num_points):
                                      Y_init=loss_value_samples,
                                      acquisition_type='EI',
                                      acquisition_jitter=0.05,
-                                     noise_va=0.01**2,
+                                     noise_va=0.001**2,
                                      exact_feval=False,
                                      normalize_Y=False,
                                      maximize=False)
