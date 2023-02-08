@@ -2,7 +2,7 @@
 
 import numpy as np
 import warnings
-from Optimizer_Scripts.learning_rate_generator import generate_learning_rates
+import Optimizer_Scripts.learning_rate_generator as lrgen
 from Optimizer_Scripts.Delayer import Delayer
 from Optimizer_Scripts.Data import Data
 from Optimizer_Scripts.LossFunc import LossFunc
@@ -36,14 +36,14 @@ class FuncOpt:
         self.x_inits = points
             
                 
-    def get_optimizer(self, optimizer_name, const_lr, beta_1=0.9, beta_2=0.999, 
+    def get_optimizer(self, optimizer_name, beta_1=0.9, beta_2=0.999, 
                       **lr_params):
         """Initialize parameters and return the optimizer object."""
         if optimizer_name == 'Adam':
             params = {
                 'beta_1': beta_1, 
                 'beta_2': beta_2,
-                'learning_rate': generate_learning_rates(const_lr, lr_params)
+                'learning_rate': lrgen.generate_learning_rates(**lr_params)
                 }
             return optimizers.Adam(params)
         else:
@@ -59,21 +59,20 @@ class FuncOpt:
                        save_grad)            
                 
                 
-    def get_lr_params(self, const_lr=True, learning_rate=1.0, step_size=740.,
-                      max_learning_rate=2.98, min_learning_rate=0.23):
-        if const_lr:
-            return {'const_lr': True,
-                    'learning_rate': learning_rate}
-        else:
-            return {'const_lr': False,
-                    'max_learning_rate': max_learning_rate, 
-                    'min_learning_rate': min_learning_rate, 
-                    'step_size': step_size}
+    def get_lr_params(self, lr_type, **kwargs):
+        lr_keys = lrgen.get_param_dict(lr_type).keys()
+        try:
+            lr_params = {key : kwargs[key] for key in lr_keys}
+            lr_params["lr_type"] = lr_type
+            return lr_params
+        except:
+            raise KeyError(r"Learning rate type '{}' requires the following "
+                           "keys: {}".format(lr_type, lr_keys))
+        
 
-
-    def optimize(self, delay_type, optimizer_name='Adam', maxiter=5000, 
-                 tol=1e-5, break_opt=True, save_state=(0,1), save_loss=True, 
-                 save_grad=False, **lr_kwargs):
+    def optimize(self, delay_type, lr_type, optimizer_name='Adam', tol=1e-5, 
+                 maxiter=5000, break_opt=True, save_state=(0,1), 
+                 save_loss=True, save_grad=False, **lr_kwargs):
         """Run the optimization on the initial points already initialized and 
         saves values to be plotted.
         
@@ -94,7 +93,7 @@ class FuncOpt:
             return
         
         # Initialize
-        lr_params = self.get_lr_params(**lr_kwargs)
+        lr_params = self.get_lr_params(lr_type, **lr_kwargs)
         self.data = Data(self.loss_func)
         self.data.set_delay_scheme(delay_type, maxiter, tol, break_opt)
         self.data.set_optimizer_params(optimizer_name, lr_params)

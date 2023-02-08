@@ -3,7 +3,7 @@
 import sys
 #sys.path.append('/home/yungdankblast/Desktop/Research/delay-optimizer')
 sys.path.append('/home/cayjobla/Desktop/Research/delay-optimizer')
-from Analyzer_w_result import FuncOpt
+from Analyzer import FuncOpt
 from Optimizer_Scripts.DelayTypeGenerators import *
 from Optimizer_Scripts.Data import Data
 import os
@@ -33,7 +33,8 @@ class Computation:
                 self.func_dict[d].x_inits[:,:2] = x_inits
     
     
-    def run_save(self, d, delay_type, file_tag="", overwrite=False, **kwargs):
+    def run_save(self, d, delay_type, lr_type='const', file_tag="", 
+                 overwrite=False, **kwargs):
         func_obj = self.func_dict[d]
         filename = r"Data/{}{}d_{}.dat".format(self.loss_name, d, file_tag)
         
@@ -42,8 +43,8 @@ class Computation:
                   "to overwrite the previous data.")
             return
         
-        func_obj.optimize(delay_type, **kwargs)     # Perform optimization 
-        func_obj.save_data(filename)                # Save values
+        func_obj.optimize(delay_type, lr_type, **kwargs)    # Optimize
+        func_obj.save_data(filename)                        # Save values
         func_obj.delete_data() 
     
             
