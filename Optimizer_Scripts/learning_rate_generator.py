@@ -1,9 +1,9 @@
 import numpy as np
 
-def constant(max_lr):
+def constant(learning_rate):
     """Yields a given constant learning rate
     """
-    while True: yield max_lr     
+    while True: yield learning_rate   
        
        
 def step(max_lr, gamma, step_size):
