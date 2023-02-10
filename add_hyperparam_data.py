@@ -9,7 +9,7 @@ import os
 import json
 import glob
 
-csv_name = "hyperparameter_data_lr_types_test.csv"
+csv_name = "hyperparameter_data_delay_turnoff_test.csv"
 
 dfs = []
 file_list = glob.glob('*.json')                    # Get all .json files
