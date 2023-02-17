@@ -16,7 +16,7 @@ class Data:
         self.state_vals = []
         self.loss_vals = []
         self.grad_vals = []
-        self.conv = []
+        self.converged = []
         
     
     # Initialization -------------------------------------------------------
@@ -45,28 +45,16 @@ class Data:
     
     # Optimization ---------------------------------------------------------
     
-    def add_point(self, delayer, save_state, save_loss, save_grad, **kwargs):
+    def add_point(self, result, save_state, save_loss, save_grad):
         """Append the values for the delayed optimization of a single point"""
-        if save_state:
-            state_list = np.asarray(delayer.state_list)
-            if save_state is True:
-                self.state_vals.append(np.array(state_list))
-            else:
-                self.state_vals.append(np.array([it[np.r_[save_state]] 
-                                                 for it in state_list]))
+        if save_state is not False:
+            self.state_vals.append(result.state_vals)
         if save_loss is True:
-            self.loss_vals.append(np.array(delayer.loss_list))
+            self.loss_vals.append(result.loss_vals)
         if save_grad is True:
-            self.grad_vals.append(np.array(delayer.grad_list))
-        self.conv.append(delayer.conv)
-        
-    
-    def close(self):
-        """Reformat the lists into arrays so new values cannot be added"""
-        self.state_vals = np.asarray(self.state_vals, dtype=object)
-        self.loss_vals = np.asarray(self.loss_vals, dtype=object)
-        self.grad_vals = np.asarray(self.grad_vals, dtype=object)
-        self.conv = np.asarray(self.conv)
+            self.grad_vals.append(result.grad_vals)
+            
+        self.converged.append(result.converged)
         
     
     # Data retrieval -------------------------------------------------------
@@ -128,7 +116,18 @@ class Data:
     
     # Saving / Loading -----------------------------------------------------
     
+    def close(self):
+        """Reduce memory size of lists for storage"""
+        self.state_vals = self.state_vals[:]
+        self.loss_vals = self.loss_vals[:]
+        self.grad_vals = self.grad_vals[:]
+        self.converged = self.converged[:]
+        
+    
     def save(self, filename): 
+        """Save data to given file"""
+        self.close()
+        
         if not filename.endswith('.dat'):   # Format filename
             filename += '.dat'
             
@@ -141,6 +140,7 @@ class Data:
         
     @classmethod
     def load(cls, filename):
+        """Load data from file and return class object"""
         if not filename.endswith('.dat'):   # Format filename
             filename += '.dat'
         
