@@ -77,8 +77,8 @@ def get_loss_function(args, param):
     def partial_loss_function(params):
         x_inits = np.random.uniform(domain_0, domain_1, (num_initials, n))
         error_value = 0
-        optimizer = get_adam_optimizer(params)
         for init in x_inits:
+            optimizer = get_adam_optimizer(params)
             my_opt = Delayer(n=n, x_init=init, optimizer=optimizer,
                              loss_function=cost_function, grad=grad, 
                              max_L=max_delay, num_delays=num_delays)

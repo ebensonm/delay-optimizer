@@ -9,7 +9,7 @@ import os
 import json
 import glob
 
-csv_name = "hyperparameter_data_zakharov.csv"
+csv_name = "hyperparameter_var_LR1.csv"
 
 dfs = []
 file_list = glob.glob('*.json')                    # Get all .json files
@@ -22,10 +22,10 @@ for filename in file_list:
     
     # Get the params from the best_params column and join to the data
     series_list.append(pd.Series(data))
-    os.remove(filename)
+    #os.remove(filename)
 
 df = pd.concat(series_list,axis=1)   # Get a dataframe of all .json data
-if os.path.exists(csv_name):    #read current data to append to other data
+if os.path.exists('Results/{}'.format(csv_name)):  #read current data to append to other data
     current_data = pd.read_csv(csv_name, header=None, index_col=0)
     df = pd.concat([df, current_data],axis=1)
     
