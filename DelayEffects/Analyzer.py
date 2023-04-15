@@ -3,6 +3,7 @@
 import numpy as np
 import warnings
 import pathos.multiprocessing as multiprocessing
+from tqdm import tqdm
 import Optimizer_Scripts.learning_rate_generator as lrgen
 from Optimizer_Scripts.Delayer import Delayer
 from Optimizer_Scripts.Data import Data
@@ -24,9 +25,8 @@ class FuncOpt:
                 
     def random_points(self, num_points):
         """Randomly initialize given number of points within the domain"""
-        points = np.random.uniform(*self.loss_func.domain, 
-                                   size=(num_points,self.loss_func.n))
-        self.x_inits = points
+        self.x_inits = np.random.uniform(*self.loss_func.domain, 
+                                         size=(num_points,self.loss_func.n))
         
         
     def load_points(self, points):
@@ -111,18 +111,15 @@ class FuncOpt:
                                 lr_params, optimizer_name, tol, maxiter, 
                                 break_opt, save_state, save_loss, save_grad)
         
+        pbar = tqdm(total=len(self.x_inits), 
+                    desc=r"{} {}d ({})".format(self.loss_func.loss_name, 
+                                               self.loss_func.n,
+                                               delay_type.delay_type), 
+                    leave=True)
         with multiprocessing.ProcessingPool(processes) as pool:
             for result in pool.imap(task, self.x_inits):
                 self.data.add_point(result, save_state, save_loss, save_grad)
-        """
-        for x in self.x_inits:
-            # Initialize optimizer and delayer for new point
-            result = FuncOpt.run(x, self.loss_func, delay_type, lr_type, 
-                                 lr_params, optimizer_name, tol, maxiter, 
-                                 break_opt, save_state, save_loss, save_grad)
-            
-            self.data.add_point(delayer, save_state, save_loss, save_grad)
-        """
+                pbar.update(1)
             
         return self.data
 
