@@ -1,11 +1,10 @@
 # computation.py
 
 import sys
-#sys.path.append('/home/yungdankblast/Desktop/Research/delay-optimizer')
-sys.path.append('/home/cayjobla/Desktop/Research/delay-optimizer')
+sys.path.append('/home/yungdankblast/DelayedOptimization/delay-optimizer')
 import os
 import numpy as np
-from Analyzer import FuncOpt
+from FuncOptHandler import Handler
 
 from Optimizer_Scripts.DelayTypeGenerators import *
 
@@ -24,7 +23,7 @@ class Computation:
             
         
     def get_analyzer(self, d):
-        func_opt = FuncOpt(self.loss_name, d)
+        func_opt = Handler(self.loss_name, d)
         if hasattr(self, 'x_inits'):
             func_opt.load_points(self.x_inits[:,:d])
         return func_opt
