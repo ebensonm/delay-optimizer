@@ -1,10 +1,17 @@
+# For the algorithm
 numpy
 pandas
-GPy
-GPyOpt
 scipy
-sklearn
-json
+scikit-learn
 ray
 argparse
-glob
+
+# For testing / examples
+blosc
+pathos
+tqdm
+matplotlib
+
+# Not working in Python 3.10
+#GPy
+#GPyOpt
