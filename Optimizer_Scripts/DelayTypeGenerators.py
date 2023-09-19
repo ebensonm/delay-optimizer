@@ -1,23 +1,25 @@
 # DelayTypeGenerators.py
 
-"""Functions defining the different delay types"""
+"""Classes defining generators for the different delay types"""
 
 import numpy as np
 
 class DelayType():
-    def __init__(self, max_L, num_delays):
+    def __init__(self, delay_type, max_L, num_delays, delayed=True):
+        self.delay_type = delay_type
         self.max_L = max_L
         self.num_delays = num_delays
-        self.delayed = True
+        self.delayed = delayed
         
     def copy(self):
+        """Return a copy of the DelayType object.
+        The state of the delay generator is not maintained in the copy.
+        """
         return get_delay_scheme(**self.__dict__)
         
 class Undelayed(DelayType):
     def __init__(self, **kwargs):
-        DelayType.__init__(self, 0, 0)
-        self.delayed = False
-        self.delay_type = "undelayed"
+        DelayType.__init__(self, "undelayed", max_L=0, num_delays=0, delayed=False)
         
     def D_gen(self, n):
         while True:
@@ -25,8 +27,7 @@ class Undelayed(DelayType):
         
 class Uniform(DelayType):
     def __init__(self, max_L, num_delays, **kwargs):
-        DelayType.__init__(self, max_L, num_delays)
-        self.delay_type = "uniform"
+        DelayType.__init__(self, "uniform", max_L, num_delays)
         
     def D_gen(self, n):
         for i in range(self.num_delays):
@@ -36,8 +37,7 @@ class Uniform(DelayType):
         
 class Stochastic(DelayType):
     def __init__(self, max_L, num_delays, **kwargs):
-        DelayType.__init__(self, max_L, num_delays)
-        self.delay_type = "stochastic"
+        DelayType.__init__(self, "stochastic", max_L, num_delays)
     
     def D_gen(self, n):
         for i in range(self.num_delays):
@@ -47,8 +47,7 @@ class Stochastic(DelayType):
     
 class Decaying(DelayType):
     def __init__(self, max_L, num_delays, **kwargs):
-        DelayType.__init__(self, max_L, num_delays)
-        self.delay_type = "decaying"
+        DelayType.__init__(self, "decaying", max_L, num_delays)
     
     def D_gen(self, n):
         for i in range(self.num_delays):
@@ -59,8 +58,7 @@ class Decaying(DelayType):
     
 class StochDecay(DelayType):        # Unused
     def __init__(self, max_L, num_delays, **kwargs):
-        DelayType.__init__(self, max_L, num_delays)
-        self.delay_type = "stochastic decaying"
+        DelayType.__init__(self, "stochastic decaying", max_L, num_delays)
         
     def D_gen(self, n):
         for i in range(self.num_delays):
@@ -71,9 +69,8 @@ class StochDecay(DelayType):        # Unused
     
 class Partial(DelayType):
     def __init__(self, max_L, num_delays, p, **kwargs):
-        DelayType.__init__(self, max_L, num_delays)
+        DelayType.__init__(self, "partial", max_L, num_delays)
         self.p = p
-        self.delay_type = "partial"
         
     def D_gen(self, n):
         for i in range(self.num_delays):
