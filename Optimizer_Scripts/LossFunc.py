@@ -4,7 +4,6 @@ import numpy as np
 from Optimizer_Scripts import functions
 
 
-
 class LossFunc:
     """Object to hold function information."""
     
@@ -13,7 +12,6 @@ class LossFunc:
         self.n = n
         self.initialize_function()
         
-        
     def __eq__(self, other):
         if type(other) is type(self):
             return (self.loss_name == other.loss_name) \
@@ -21,7 +19,6 @@ class LossFunc:
                 and (self.domain == other.domain) \
                 and (self.minimizer == other.minimizer)
         return False
-        
         
     def initialize_function(self):
         """Initializes the loss and gradient functions based on loss_name. 

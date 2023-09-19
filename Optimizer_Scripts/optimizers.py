@@ -1,8 +1,6 @@
 import numpy as np
-import time
 
 class GradientDescent:
-    
     def __init__(self, params):
         self.params = params
         self.name = 'Gradient Descent'
@@ -19,7 +17,6 @@ class GradientDescent:
         return self.x_state
       
 class Adam:
-
     def __init__(self, params, epsilon=1e-7):
         self.params = params
         self.epsilon = epsilon
@@ -44,7 +41,6 @@ class Adam:
         return self.x_state
         
 class Momentum:
-
     def __init__(self, params):
         self.params = params
         self.name = 'Momentum'
@@ -64,7 +60,6 @@ class Momentum:
         return self.x_state
             
 class NesterovMomentum:
-
     def __init__(self, params):
         self.params = params
         self.name = "Nesterov Momentum"

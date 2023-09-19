@@ -26,8 +26,7 @@ class Data:
         self.loss_name = loss_func.loss_name
         self.dim = loss_func.n
         self.domain = loss_func.domain
-        self.minimizer = loss_func.minimizer
-        
+        self.minimizer = loss_func.minimizer 
     
     def set_delay_scheme(self, delay_type, maxiter, tol, break_opt):
         """Set delay scheme values from DelayType object"""
@@ -35,7 +34,6 @@ class Data:
         self.maxiter = maxiter
         self.tol = tol
         self.break_opt = break_opt
-        
         
     def set_optimizer_params(self, optimizer_name, lr_params):
         """Set parameter values for the optimizer"""
@@ -56,7 +54,7 @@ class Data:
             
         self.converged.append(result.converged)
         
-    
+
     # Data retrieval -------------------------------------------------------
     
     def get_loss_function(self):
@@ -65,29 +63,23 @@ class Data:
         loss_func.minimizer = self.minimizer
         return loss_func
     
-    
     def get_delay_type(self):
         return DelayTypeGenerators.get_delay_type(self.delay_params)  
-    
     
     def get_initials(self, value_list):
         """Returns an array of initial values from the given list of sequences"""
         return np.asarray([val[0] for val in value_list])
     
-    
     def get_x_inits(self):
         return self.get_initials(self.state_vals)
-    
     
     def get_finals(self, value_list):
         """Returns an array of final values from the given list of sequences"""
         return np.asarray([val[-1] for val in value_list])
     
-    
     def get_mean_final(self, value_list):
         """Returns the final mean value of the given list of sequences"""
         return np.mean(self.get_finals(value_list), axis=0)
-    
     
     def get_slice(self, dim_tuple):
         """Returns the desired slice of the state data. 
@@ -100,7 +92,6 @@ class Data:
         """
         return np.array([np.array([it[np.r_[dim_tuple]] for it in point]) 
                          for point in self.state_vals], dtype=object)
-    
     
     def get_loss_array(self):
         """Returns the full, nonragged 2d array of loss values. Array has 
@@ -123,7 +114,6 @@ class Data:
         self.grad_vals = self.grad_vals[:]
         self.converged = self.converged[:]
         
-    
     def save(self, filename): 
         """Save data to given file"""
         self.close()
@@ -136,7 +126,6 @@ class Data:
         
         with open(filename, "wb") as file: 
             file.write(compressed_pickle)
-        
         
     @classmethod
     def load(cls, filename):
