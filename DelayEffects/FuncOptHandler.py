@@ -45,10 +45,15 @@ class Handler:
         try:
             lr_params = {key : kwargs[key] for key in lr_keys}
             lr_params["lr_type"] = lr_type
-            return lr_params
         except:
             raise KeyError(r"Learning rate type '{}' requires the following "
                            r"keys: {}".format(lr_type, lr_keys))
+        if "beta_1" in kwargs:
+            lr_params["beta_1"] = kwargs["beta_1"]
+        if "beta_2" in kwargs:
+            lr_params["beta_2"] = kwargs["beta_2"]
+
+        return lr_params
               
     @staticmethod
     def run(x, loss_func, delay_type, lr_params, optimizer_name, tol, 

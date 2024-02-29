@@ -57,26 +57,29 @@ class Delayer:
         """
         # Delay the state and save grad
         del_state = np.diag(self.time_series[D])
-        x_grad = self.loss_func.grad(del_state)  
-        if self.save_grad is True:
-            self.grad_list.append(np.linalg.norm(x_grad)) 
+        x_grad = self.loss_func.grad(del_state)             # TODO: Gradient saving may be delayed by an index
         
         # Update!
         new_state = self.optimizer(del_state, x_grad, i)    
-        self.add_new_state(new_state)   
+
+        # Roll forward the time series and add new state
+        self.time_series = np.roll(self.time_series, 1, axis=0)
+        self.time_series[0] = new_state  
+
+        # Log / save values
+        self.log(state=new_state, grad=x_grad, loss=self.loss_func.loss(new_state))
         
         return new_state                                       
         
-         
-    def add_new_state(self, new_state):
-        """Add the new state to the list and roll time series forward."""
+
+    def log(self, state, grad, loss):
         if self.save_state is not False:
-            self.state_list.append(new_state)
-        
-        # Roll forward the delay state array
-        self.time_series = np.roll(self.time_series, 1, axis=0)
-        self.time_series[0] = new_state
-        
+            self.state_list.append(state)
+        if self.save_grad is True:
+            self.grad_list.append(grad) 
+        if self.save_loss is True:
+            self.loss_list.append(loss)
+    
         
     def optimize(self, x_init, maxiter=2000, tol=1e-5, break_opt=True):
         """Computes the time series using the passed optimizer from __init__, 
@@ -126,9 +129,6 @@ class Delayer:
         for i in range(1, maxiter+1):
             old_state = new_state                   # Keep the old state
             new_state = self.update(i, next(D_gen)) # Update!
-            
-            if self.save_loss is True:              # Save loss value
-                self.loss_list.append(self.loss_func.loss(new_state))
               
             # Stopping condition for convergence
             if conv is False and np.linalg.norm(new_state - old_state) < tol:  
