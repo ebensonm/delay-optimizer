@@ -112,9 +112,9 @@ class Handler:
         self.data.set_optimizer_params(optimizer_name, lr_params)
             
         # Parallelize and optimize for each initial point
-        task = lambda x: Handler.run(x, self.loss_func, delay_type, lr_type, 
-                                lr_params, optimizer_name, tol, maxiter, 
-                                break_opt, save_state, save_loss, save_grad)
+        task = lambda x: Handler.run(x, self.loss_func, delay_type, lr_params, 
+                                optimizer_name, tol, maxiter, break_opt, save_state, 
+                                save_loss, save_grad)
         
         pbar = tqdm(total=len(self.x_inits), 
                     desc=r"{} {}d ({})".format(self.loss_func.loss_name, 
