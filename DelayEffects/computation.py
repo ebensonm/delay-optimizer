@@ -78,8 +78,31 @@ class Computation:
                 self.run_save(d, delay_type.copy(), 'const', file_tag, 
                               overwrite, **kwargs)
             
-    
-    
+
+"""
+# Example run
+compute_opt = Computation("Rastrigin")
+
+stable_params = {"learning_rate": 0.000302851, "beta_1": 0.9, "tol": 1e-5}
+
+maxiter = 5000
+compute_opt.run_save(
+    d = 1000,
+    delay_type = Undelayed(),
+    lr_type = 'const',
+    maxiter = maxiter,
+    file_tag = "undel_stable",
+    **stable_params
+)
+compute_opt.run_save(
+    d = 1000,
+    delay_type = Stochastic(max_L=1, num_delays=maxiter),
+    lr_type = 'const',
+    maxiter = maxiter,
+    file_tag = "stoch_stable",
+    **stable_params
+)
+"""
     
     
     
