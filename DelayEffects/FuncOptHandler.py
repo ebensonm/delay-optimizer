@@ -104,6 +104,10 @@ class Handler:
         if len(self.x_inits) == 0:
             warnings.warn("No points have been initialized.")
             return
+
+        # Handle the 1d case
+        if self.loss_func.n == 1 and save_state == (0,1):
+            save_state = (0,)
         
         # Initialize
         lr_params = self.get_lr_params(lr_type, **lr_kwargs)

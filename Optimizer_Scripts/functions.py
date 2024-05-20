@@ -109,4 +109,18 @@ def zakharov_deriv_gen(n):
         coeff = 2*isum + 4*isum**3
         return 2*x + coeff * 0.5 * i
     return zakharov_grad
+
+def stable_gen(n, c=1):
+    if n != 1:
+        raise ValueError("Dimension for the stable function must be 1")
+    def stable(x, *args):
+        return (c*(x**2 - np.cos(2*np.pi*x) + 1))[0]
+    return stable
+
+def stable_deriv_gen(n, c=1):
+    if n != 1:
+        raise ValueError("Dimension for the stable function must be 1")
+    def stable_grad(x, *args):
+        return 2*c*(x + np.pi*np.sin(2*np.pi*x))
+    return stable_grad
             
