@@ -9,7 +9,7 @@ class Delayer:
     with added functionality of DelayType object parsing and generator delays.
     """
     def __init__(self, delay_type, loss_func, optimizer, save_state=False, 
-                 save_loss=False, save_grad=False):
+                 save_loss=False, save_grad=False, full_delay=False):
         """Initializer for the Delayer class
             
         Parameters: 
@@ -30,11 +30,17 @@ class Delayer:
         self.save_state = save_state
         self.save_loss = save_loss
         self.save_grad = save_grad
-        
+        self.full_delay = full_delay
+
+        if full_delay and self.optimizer.name != "Adam":
+            raise NotImplementedError("Only the Adam optimizer is supported for full delays.")
+
         
     def initialize(self, x_init):
         self.optimizer.initialize(x_init)
-        self.time_series = np.tile(x_init, (self.delay_type.max_L+1, 1))
+        self.time_series = np.tile(x_init, (self.delay_type.max_L+1, 1)).astype(float)
+        self.m_series = np.tile(self.optimizer.m_t, (self.delay_type.max_L+1, 1)).astype(float)
+        self.v_series = np.tile(self.optimizer.v_t, (self.delay_type.max_L+1, 1)).astype(float)
         
         if self.save_state is not False:
             self.state_list = [x_init]
@@ -58,6 +64,11 @@ class Delayer:
         # Delay the state and save grad
         del_state = np.diag(self.time_series[D])
         x_grad = self.loss_func.grad(del_state)             # TODO: Gradient saving may be delayed by an index
+
+        if self.full_delay:
+            # Delay the optimizer's m_t and v_t
+            self.optimizer.m_t = np.diag(self.m_series[D])
+            self.optimizer.v_t = np.diag(self.v_series[D])
         
         # Update!
         new_state = self.optimizer(del_state, x_grad, i)    
@@ -65,6 +76,13 @@ class Delayer:
         # Roll forward the time series and add new state
         self.time_series = np.roll(self.time_series, 1, axis=0)
         self.time_series[0] = new_state  
+
+        if self.full_delay:
+            # Roll forward the optimizer's m_t and v_t
+            self.m_series = np.roll(self.m_series, 1, axis=0)
+            self.m_series[0] = self.optimizer.m_t
+            self.v_series = np.roll(self.v_series, 1, axis=0)
+            self.v_series[0] = self.optimizer.v_t
 
         # Log / save values
         self.log(state=new_state, grad=x_grad, loss=self.loss_func.loss(new_state))
@@ -104,15 +122,15 @@ class Delayer:
             def __init__(self, delayer, converged, runtime):
                 """Save requested values"""
                 if delayer.save_state is not False:  
-                    self.state_vals = np.asarray(delayer.state_list)
+                    self.state_vals = np.asarray(delayer.state_list, dtype=float)
                     if delayer.save_state is not True:  # Extract state dimensions
                         self.state_vals = self.state_vals[:,delayer.save_state]
                         
                 if delayer.save_loss is True:
-                    self.loss_vals = np.asarray(delayer.loss_list)
+                    self.loss_vals = np.asarray(delayer.loss_list, dtype=float)
                     
                 if delayer.save_grad is True:
-                    self.grad_vals = np.asarray(delayer.grad_list)
+                    self.grad_vals = np.asarray(delayer.grad_list, dtype=float)
                     
                 self.converged = converged
                 self.runtime = runtime
@@ -141,5 +159,24 @@ class Delayer:
         return Result(self, conv, runtime)
             
         
-        
+# # For testing
+# if __name__ == "__main__":
+#     import sys
+#     sys.path.append("/home/yungdankblast/DelayedOptimization/")
+
+#     from Optimizer_Scripts.DelayTypeGenerators import Undelayed, Stochastic
+#     from Optimizer_Scripts.LossFunc import LossFunc
+#     from Optimizer_Scripts.optimizers import Adam
+#     from Optimizer_Scripts.learning_rate_generator import constant
+
+#     delayer = Delayer(
+#         delay_type=Stochastic(max_L=1, num_delays=100),  
+#         loss_func=LossFunc("Ackley", 2), 
+#         optimizer=Adam(params={'beta_1':0.9, 'beta_2':0.999, 'learning_rate':constant(0.01)}),
+#         save_state=False, 
+#         save_loss=False, 
+#         save_grad=False,
+#         full_delay=True
+#     )
+#     delayer.optimize(np.array([1,1]), break_opt=False)
     

@@ -57,7 +57,7 @@ class Handler:
               
     @staticmethod
     def run(x, loss_func, delay_type, lr_params, optimizer_name, tol, 
-            maxiter, break_opt, save_state, save_loss, save_grad):
+            maxiter, break_opt, save_state, save_loss, save_grad, full_delay):
         """Run optimization on a single point"""
         
         def get_optimizer(beta_1=0.9, beta_2=0.999, **lr_params):
@@ -74,8 +74,8 @@ class Handler:
             
         def get_delayer(optimizer):
             """Initialize and return the Delayer object."""
-            return Delayer(delay_type, loss_func, optimizer, 
-                           save_state, save_loss, save_grad)  
+            return Delayer(delay_type, loss_func, optimizer, save_state, save_loss, 
+                           save_grad, full_delay)  
         
         optimizer = get_optimizer(**lr_params)
         delayer = get_delayer(optimizer)
@@ -85,7 +85,7 @@ class Handler:
    
     def optimize(self, delay_type, lr_type, optimizer_name='Adam', maxiter=5000,  
                  tol=1e-5, break_opt=True, save_loss=True, save_grad=False, 
-                 save_state=(0,1), processes=None, **lr_kwargs):
+                 save_state=(0,1), processes=None, full_delay=False, **lr_kwargs):
         """Run the optimization on the initial points already initialized and 
         saves values to be plotted.
         
@@ -99,6 +99,8 @@ class Handler:
             save_state(bool/tuple): state dimensions to save during optimization
             save_loss(bool): whether to save loss values over time 
             save_grad(bool): whether to save gradient values over time
+            full_delay(bool): in the case of the Adam optimizer, whether to 
+                              also delay the m and v vectors
         """
         # Check if points have been initialized
         if len(self.x_inits) == 0:
@@ -118,7 +120,7 @@ class Handler:
         # Parallelize and optimize for each initial point
         task = lambda x: Handler.run(x, self.loss_func, delay_type, lr_params, 
                                 optimizer_name, tol, maxiter, break_opt, save_state, 
-                                save_loss, save_grad)
+                                save_loss, save_grad, full_delay)
         
         pbar = tqdm(total=len(self.x_inits), 
                     desc=r"{} {}d ({})".format(self.loss_func.loss_name, 

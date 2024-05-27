@@ -1,7 +1,7 @@
 # computation.py
 
 import sys
-sys.path.append('/home/yungdankblast/DelayedOptimization/delay-optimizer')
+sys.path.append('/home/yungdankblast/DelayedOptimization')
 import os
 import numpy as np
 from FuncOptHandler import Handler
@@ -46,7 +46,7 @@ class Computation:
         np.savez_compressed(filename, x_inits=self.x_inits)
         
         
-    def get_filename(self, dim=None, file_tag="", ext=".npz", path="Data/"):
+    def get_filename(self, dim=None, file_tag="", ext=".npz", path="DelayEffects/Data/"):
         if dim is None:
             return path + self.loss_name + "_" + file_tag + ext
         else:
@@ -80,32 +80,31 @@ class Computation:
             
 
 
-# Example run
-# Decaying LR (inverse-time decaying)
-compute_opt = Computation("Rastrigin")
+# Example run=
+compute_opt = Computation("Ackley")
 maxiter = 5000
 
 params = {
     "d": 1000,
     "maxiter": maxiter,
-    "lr_type": "inv",           # Inverse-time decaying LR
-    "max_lr": 8., 
-    "gamma": 0.001,
-    "p": 6,
+    "lr_type": "const",           # Constant Learning Rate
     "beta_1": 0.9, 
     "tol": 1e-5,
     "break_opt": False,
+    "full_delay": True,
 }
 
-maxiter = 5000
-compute_opt.run_save(
-    delay_type = Undelayed(),
-    file_tag = "undel_inv",
-    **params
-)
+# maxiter = 5000
+# compute_opt.run_save(
+#     delay_type = Undelayed(),
+#     learning_rate = 0.087579721240169,
+#     file_tag = "undel_full",
+#     **params
+# )
 compute_opt.run_save(
     delay_type = Stochastic(max_L=1, num_delays=maxiter),
-    file_tag = "stochL1_inv",
+    learning_rate = 1.40918128594683,
+    file_tag = "stochL1_full",
     **params
 )
 
