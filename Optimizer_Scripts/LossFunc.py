@@ -47,7 +47,7 @@ class LossFunc:
         elif self.loss_name.lower() == 'stable':
             self.loss = functions.stable_gen(self.n)
             self.grad = functions.stable_deriv_gen(self.n)
-            self.domain = [-5, 5]
+            self.domain = [-3., 3.]
             self.minimizer = np.zeros(self.n)
         else:
             raise ValueError("Function name not recognized")
