@@ -1,11 +1,11 @@
 # DelayTypeGenerators.py
 
 import numpy as np
-from typing import Generator
+from typing import Generator, List
 
 
 class DelayType():
-    def __init__(self, delay_type, max_L, num_delays):
+    def __init__(self, max_L: int, num_delays: int):
         self.max_L = max_L
         self.num_delays = num_delays
 
@@ -31,7 +31,7 @@ class Undelayed(DelayType):
 class Uniform(DelayType):
     def D_gen(self, n: int) -> Generator[np.ndarray[int], None, None]:
         for i in range(self.num_delays):
-            yield self.max_L*np.ones(n, dtype=int)
+            yield self.max_L * np.ones(n, dtype=int)
         while True:
             yield np.zeros(n, dtype=int)
 
@@ -66,7 +66,7 @@ class Partial(DelayType):
 
 
 class Cyclical(DelayType):
-    def __init__(self, D: list[np.ndarray[int]], num_delays: int):
+    def __init__(self, D: List[np.ndarray[int]], num_delays: int):
         super().__init__(max_L=np.max(D), num_delays=num_delays)
         if any([dt < 0 for dt in D]):
             raise ValueError("Delay distribution D can only contain non-negative integers")
