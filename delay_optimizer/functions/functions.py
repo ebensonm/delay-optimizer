@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Optional, Tuple, Callable
+from typing import Tuple, Callable
 
 class ObjectiveFunction:
     def __init__(self, n: int, domain: Tuple[float], minimizer: np.ndarray):
@@ -33,10 +33,10 @@ class Ackley(ObjectiveFunction):
     def __init__(
         self, 
         n: int, 
-        domain: Optional[Tuple[float]] = (-32.768, 32.768), 
-        a: Optional[float] = 20., 
-        b: Optional[float] = 0.2, 
-        c: Optional[float] = 2*np.pi
+        domain: Tuple[float] = (-32.768, 32.768), 
+        a: float = 20., 
+        b: float = 0.2, 
+        c: float = 2*np.pi
     ):
         super().__init__(n, domain=domain, minimizer=np.zeros(n))
         self.a = a
@@ -66,7 +66,7 @@ class Rastrigin(ObjectiveFunction):
     def __init__(
         self, 
         n: int, 
-        domain: Optional[Tuple[float]] = (-5.12, 5.12)
+        domain: Tuple[float] = (-5.12, 5.12)
     ):
         super().__init__(n, domain=domain, minimizer=np.zeros(n))
 
@@ -86,7 +86,7 @@ class Rosenbrock(ObjectiveFunction):
     def __init__(
         self, 
         n: int, 
-        domain: Optional[Tuple[float]] = (-5., 10.), 
+        domain: Tuple[float] = (-5., 10.), 
         a: float = 1., 
         b: float = 100.
     ):
@@ -120,7 +120,7 @@ class Zakharov(ObjectiveFunction):
     def __init__(
         self, 
         n: int, 
-        domain: Optional[Tuple[float]] = (-5., 10.)
+        domain: Tuple[float] = (-5., 10.)
     ):
         super().__init__(n, domain=domain, minimizer=np.zeros(n))
 

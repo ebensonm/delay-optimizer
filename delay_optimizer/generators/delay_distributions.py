@@ -1,5 +1,3 @@
-# DelayTypeGenerators.py
-
 import numpy as np
 from typing import Generator, List
 
