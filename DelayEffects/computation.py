@@ -46,7 +46,7 @@ class Computation:
         np.savez_compressed(filename, x_inits=self.x_inits)
         
         
-    def get_filename(self, dim=None, file_tag="", ext=".npz", path="Data/"):
+    def get_filename(self, dim=None, file_tag="", ext=".npz", path="data/"):
         if dim is None:
             return path + self.loss_name + "_" + file_tag + ext
         else:
@@ -96,32 +96,35 @@ params = {  # Parameters for intrinsic stability
     "overwrite": False,
 }
 
-stable_lr = .007
 large_lr = 3.
-small_lr = .03
+small_lr = 0.007730012058189372
 
+
+#"""
 ## Constant LR
 const_params = {
     "lr_type": "const",
-    "learning_rate": stable_lr,
+    "learning_rate": small_lr,
 }
 compute_opt.run_save(
     delay_type = Undelayed(),
-    file_tag = "undel_const_stable_local",
+    file_tag = "undel_const_small_local",
     **const_params,
     **params
 )
 compute_opt.run_save(
     delay_type = Stochastic(max_L=1, num_delays=maxiter),
-    file_tag = "stochL1_const_stable_local",
+    file_tag = "stochL1_const_small_local",
     **const_params,
     **params
 )
+#"""
 
+"""
 ## Inverse-time decaying LR
 inv_params = {
     "lr_type": "inv",    
-    "gamma": .1,
+    "gamma": 7.5e-5,
     "p": 1,
 }
 compute_opt.run_save(
@@ -152,7 +155,9 @@ compute_opt.run_save(
     **inv_params,
     **params
 )
+#"""
 
+"""
 ## Decaying Triangle decaying LR (CLR)
 tri2_params = {
     "lr_type": "tri-2",   
@@ -187,7 +192,9 @@ compute_opt.run_save(
     **tri2_params,
     **params
 )
+#"""
 
+"""
 ## Decaying Sine decaying LR
 sin2_params = {
     "lr_type": "sin-2",
@@ -222,3 +229,4 @@ compute_opt.run_save(
     **sin2_params,
     **params
 )
+#"""
