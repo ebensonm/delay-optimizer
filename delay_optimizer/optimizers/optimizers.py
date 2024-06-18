@@ -1,81 +1,88 @@
 import numpy as np
+from ..generators import learning_rate_generator as lr_gen
 
-class GradientDescent:
-    def __init__(self, params):
-        self.params = params
-        self.name = 'Gradient Descent'
+class Optimizer:
+    def __init__(self, lr=0.01):
+        if isinstance(lr, (float, int)):
+            lr = lr_gen.constant(lr)
+        self.lr = lr
         self.initialized = False
 
     def initialize(self, x_init):
-        self.n = len(x_init)
-        self.x_state = x_init
-        self.grad_helper = np.zeros(self.n) 
-        self.initialized=True
-        
-    def __call__(self, x_state, x_grad, iteration_num):
-        self.x_state = x_state - (next(self.params['learning_rate']))*x_grad
-        return self.x_state
+        raise NotImplementedError("Subclasses must implement this method")
+
+    def step(self, x, grad):
+        raise NotImplementedError("Subclasses must implement this method")
+
+    def __call__(self):
+        return self.step()
+       
+
+class GradientDescent(Optimizer):
+    def __init__(self, lr=0.01):
+        super().__init__(lr)
+
+    def initialize(self, x_init):
+        self.initialized = True
+
+    def step(self, x, grad):
+        return x - next(self.lr) * grad
+
       
-class Adam:
-    def __init__(self, params, epsilon=1e-7):
-        self.params = params
+class Adam(Optimizer):
+    def __init__(self, lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=1e-7):
+        super().__init__(lr)
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
         self.epsilon = epsilon
-        self.name = 'Adam'    
-        self.initialized = False 
-          
-    def initialize(self,x_init):
-        self.n = len(x_init)
-        self.x_state = x_init
-        self.m_t = np.zeros(self.n)
-        self.v_t = np.zeros(self.n)
-        self.grad_helper = np.zeros(self.n) 
+
+    def initialize(self, x_init):
+        self.n = x_init.shape[-1]
+        self.m = np.zeros(self.n)
+        self.v = np.zeros(self.n)
+        self._t = 0
         self.initialized = True
                
-    def __call__(self, x_state, x_grad, iteration_num):
-        #update parameters
-        self.m_t = self.params['beta_1'] * self.m_t + (1-self.params['beta_1']) * x_grad
-        self.v_t = self.params['beta_2'] * self.v_t + (1-self.params['beta_2']) * np.power(x_grad,2)
-        m_t_hat = self.m_t / (1 - np.power(self.params['beta_1'],iteration_num))
-        v_t_hat = self.v_t / (1 - np.power(self.params['beta_2'],iteration_num))
-        self.x_state = x_state - (next(self.params['learning_rate']) *  m_t_hat) / (np.sqrt(v_t_hat) + self.epsilon)
-        return self.x_state
+    def step(self, x, grad):
+        self._t += 1
+        self.m = self.beta_1 * self.m + (1 - self.beta_1) * grad
+        self.v = self.beta_2 * self.v + (1 - self.beta_2) * np.square(grad)
+        m_hat = self.m / (1 - self.beta_1 ** self._t)
+        v_hat = self.v / (1 - self.beta_2 ** self._t)
+        return x - (next(self.lr) *  m_hat) / (np.sqrt(v_hat) + self.epsilon)
         
-class Momentum:
-    def __init__(self, params):
-        self.params = params
-        self.name = 'Momentum'
-        self.initialized = False
+
+# TODO: Check this against an algorithm
+class Momentum(Optimizer):
+    def __init__(self, lr=0.01, gamma=0.9):
+        super().__init__(lr)
+        self.gamma = gamma
         
     def initialize(self, x_init):
-        self.n = len(x_init)
-        self.x_state = x_init
-        self.v_k = np.zeros(self.n,dtype=int)
-        self.grad_helper = np.zeros(self.n,dtype=int)
+        self.n = x_init.shape[-1]
+        self.v = np.zeros(self.n, dtype=int)    # Should this be integers?
         self.initialized = True
     
-    def __call__(self, x_state, x_grad, iteration_num):
-        #update parameters
-        self.v_k = self.params['gamma'] * self.v_k + next(self.params['learning_rate']) * x_grad
-        self.x_state = x_state - self.v_k
-        return self.x_state
+    def step(self, x, grad):
+        self.v = self.gamma * self.v + next(self.lr) * grad  # Is this right for v?
+        return x - self.v
             
-class NesterovMomentum:
-    def __init__(self, params):
-        self.params = params
-        self.name = "Nesterov Momentum"
-        self.initialized = False
+
+# TODO: Check this against an algorithm
+class NesterovMomentum(Optimizer):
+    def __init__(self, lr=0.01, gamma=0.9):
+        super().__init__(lr)
+        self.gamma = gamma
     
     def initialize(self, x_init):
         self.n = len(x_init)
-        self.x_state = x_init
-        self.v_k = np.zeros(self.n)
-        self.grad_helper = self.v_k
+        self.v = np.zeros(self.n)
+        self.grad_helper = np.zeros(self.n)
         self.initialized = True
         
-    def __call__(self, x_state, x_grad, iteration_num):
-        #update parameters
-        self.v_k = self.params['gamma'] * self.v_k + next(self.params['learning_rate']) * x_grad
-        self.x_state = x_state - self.v_k
-        self.grad_helper = self.params['gamma'] * self.v_k
-        return self.x_state
+    def step(self, x, grad):
+        self.v = self.gamma * self.v + next(self.lr) * grad
+        self.grad_helper = self.gamma * self.v  # What is the point of this?
+        return x - self.v                       # Same as the normal momentum, what is the difference?
+
     
