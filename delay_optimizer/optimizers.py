@@ -85,4 +85,4 @@ class NesterovMomentum(Optimizer):
         self.grad_helper = self.gamma * self.v  # What is the point of this?
         return x - self.v                       # Same as the normal momentum, what is the difference?
 
-    
+
