@@ -4,3 +4,4 @@ from .optimizers import (
     Momentum,
     NesterovMomentum
 )
+from .Delayer import Delayer

@@ -66,7 +66,7 @@ class Partial(DelayType):
 class Cyclical(DelayType):
     def __init__(self, D: List[np.ndarray[int]], num_delays: int):
         super().__init__(max_L=np.max(D), num_delays=num_delays)
-        if any([dt < 0 for dt in D]):
+        if any([any(dt < 0) for dt in D]):
             raise ValueError("Delay distribution D can only contain non-negative integers")
         self.D = D
 

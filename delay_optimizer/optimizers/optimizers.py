@@ -14,8 +14,8 @@ class Optimizer:
     def step(self, x, grad):
         raise NotImplementedError("Subclasses must implement this method")
 
-    def __call__(self):
-        return self.step()
+    def __call__(self, x, grad):
+        return self.step(x, grad)
        
 
 class GradientDescent(Optimizer):
