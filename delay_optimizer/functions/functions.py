@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Tuple, Callable
+import numpy as np
 
 class ObjectiveFunction:
     def __init__(self, n: int, domain: Tuple[float], minimizer: np.ndarray):
@@ -17,7 +18,7 @@ class ObjectiveFunction:
         return self.get_loss_function()(x)
 
     def grad(self, x) -> np.ndarray[float]:
-        return self.grad_function()(x)
+        return self.get_grad_function()(x)
     
     def __call__(self, x) -> float:
         return self.loss(x)
@@ -54,11 +55,11 @@ class Ackley(ObjectiveFunction):
     def get_grad_function(self) -> Callable:
         def ackley_grad(x: np.ndarray) -> np.ndarray[float]:
             sum_x2 = np.sum(np.square(x), axis=-1)
-            part_1a = self.a * self.b * x / np.sqrt(self.n * sum_x2)
+            part_1a = self.a * self.b * x.T / np.sqrt(self.n * sum_x2)
             part_1b = np.exp(-self.b * np.sqrt(sum_x2 / self.n))
             part_2a = self.c * np.sin(self.c * x) / self.n
             part_2b = np.exp(np.sum(np.cos(self.c * x), axis=-1) / self.n)
-            return part_1a * part1b + part_2a * part_2b
+            return (part_1a * part_1b + part_2a.T * part_2b).T
         return ackley_grad
 
 
@@ -74,12 +75,12 @@ class Rastrigin(ObjectiveFunction):
         def rastrigin(x: np.ndarray) -> float:
             summand = np.square(x) - 10 * np.cos(2*np.pi * x)
             return 10*self.n + np.sum(summand, axis=-1)
-        return ackley
+        return rastrigin
 
     def get_grad_function(self):
         def rastrigin_grad(x: np.ndarray) -> np.ndarray[float]:
             return 2*x + 20*np.pi * np.sin(2*np.pi * x)
-        return ackley_grad
+        return rastrigin_grad
 
 
 class Rosenbrock(ObjectiveFunction):
@@ -96,8 +97,8 @@ class Rosenbrock(ObjectiveFunction):
 
     def get_loss_function(self) -> Callable:
         def rosenbrock(x: np.ndarray) -> float:
-            x0 = x[:-1] # Account for difference between i and i+1
-            x1 = x[1:]
+            x0 = x[..., :-1]    # Account for difference between i and i+1
+            x1 = x[..., 1:]     # Slicing over the last axis
             summand_1 = self.b * np.square(x1 - np.square(x0))
             summand_2 = np.square(self.a - x0)
             return np.sum(summand_1 + summand_2, axis=-1)
@@ -105,13 +106,13 @@ class Rosenbrock(ObjectiveFunction):
 
     def get_grad_function(self) -> Callable:
         def rosen_grad(x: np.ndarray) -> np.ndarray[float]:
-            grad = np.zeros(self.n)
-            x0 = x[:-1]
-            x1 = x[1:]
+            grad = np.zeros_like(x)
+            x0 = x[..., :-1]
+            x1 = x[..., 1:]
 
             part_1 = self.b * (x1 - np.square(x0))
-            grad[:-1] += -4 * x0 * part_1 - 2*(self.a - x0)
-            grad[1:] += 2 * part_1
+            grad[..., :-1] += -4 * x0 * part_1 - 2*(self.a - x0)
+            grad[..., 1:] += 2 * part_1
             return grad
         return rosen_grad
 
@@ -126,17 +127,17 @@ class Zakharov(ObjectiveFunction):
 
     def get_loss_function(self) -> Callable:
         def zakharov(x: np.ndarray) -> float:
-            i_half = np.arange(.5, (self.n+1)*.5, .5)   # Equal to 0.5i
-            isum = np.sum(i_half * x, axis=-1)
+            i = np.arange(1, self.n+1)
+            i_sum = 0.5 * (x @ i)
             x2_sum = np.sum(np.square(x), axis=-1)
-            return x2_sum + np.square(isum) + np.power(isum, 4)
+            return x2_sum + np.square(i_sum) + np.power(i_sum, 4)
         return zakharov
 
     def get_grad_function(self) -> Callable:
         def zakharov_grad(x: np.ndarray) -> np.ndarray[float]:
-            i_half = np.arange(.5, (self.n+1)*.5, .5)   # Equal to 0.5i
-            isum = np.sum(i_half * x, axis=-1)
-            coeff = isum + 2*np.power(isum, 3)  # Move *2 to next line to reduce flops
-            return 2*(x + coeff * i_half)
+            i = np.arange(1, self.n+1)
+            i_sum_2 = x @ i     # The 0.5 is absorbed into the coeff calculation
+            coeff = 0.5*i_sum_2 + 0.25*np.power(i_sum_2, 3)
+            return (2*x + np.outer(coeff, i)).reshape(x.shape)
         return zakharov_grad
 
