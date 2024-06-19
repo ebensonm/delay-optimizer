@@ -1,5 +1,5 @@
 import numpy as np
-
+from .schedulers import constant
 
 class Optimizer:
     def __init__(self, lr=0.01):
@@ -53,15 +53,13 @@ class Adam(Optimizer):
     def initialize(self, x_init):
         self.m = np.zeros_like(x_init)
         self.v = np.zeros_like(x_init)
-        self._b1 = 1
-        self._b2 = 1
+        self._t = 0
         self.initialized = True
                
     def step(self, x, grad):
+        self._t += 1
         self.m = self.beta_1 * self.m + (1 - self.beta_1) * grad
         self.v = self.beta_2 * self.v + (1 - self.beta_2) * np.square(grad)
-        self._b1 *= self.beta_1
-        self._b2 *= self.beta_2
-        m_hat = self.m / (1 - self._b1)
-        v_hat = self.v / (1 - self._b2)
+        m_hat = self.m / (1 - self.beta_1 ** self._t)
+        v_hat = self.v / (1 - self.beta_2 ** self._t)
         return x - (next(self.lr) *  m_hat) / (np.sqrt(v_hat) + self.epsilon)

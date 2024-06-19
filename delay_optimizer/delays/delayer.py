@@ -22,9 +22,10 @@ class DelayedOptimizer:
         self.delay_type = delay_type
         
     def initialize(self, x_init):
+        x_init = np.atleast_2d(x_init)
         self.optimizer.initialize(x_init)
-        self.time_series = np.tile(x_init, (self.delay_type.max_L+1, 1))
-        self.delay_generator = self.delay_type.D_gen(self.objective.n)
+        self.time_series = np.tile(x_init, (self.delay_type.max_L+1, 1, 1))
+        self.delay_generator = self.delay_type.D_gen(x_init.shape)
     
     def step(self):
         """Computes the delayed state and gradient values and takes a step
@@ -32,7 +33,7 @@ class DelayedOptimizer:
         """
         # Compute the delayed state and gradient
         D = next(self.delay_generator)              # Get the delay
-        del_state = np.diag(self.time_series[D])
+        del_state = np.take_along_axis(self.time_series, D[np.newaxis,:], axis=0)[0]
         del_grad = self.objective.grad(del_state)
         
         # Roll the time series forward and update
@@ -53,5 +54,5 @@ class DelayedOptimizer:
         """
         self.initialize(x_init) 
         for i in range(maxiter):
-            x = self.step()
-        return x    
+            self.step()
+        return np.squeeze(self.time_series[0])
