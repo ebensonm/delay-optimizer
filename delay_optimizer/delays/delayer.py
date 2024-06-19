@@ -1,7 +1,7 @@
 import numpy as np
-import time
 
-class Delayer:
+
+class DelayedOptimizer:
     """Class that performs delayed optimization on the given objective function 
     with the given optimizer. The sequence of delays to use is determined by the 
     DelayType object.
