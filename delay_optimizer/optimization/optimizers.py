@@ -1,10 +1,10 @@
 import numpy as np
-from .schedulers import constant
+from .schedulers import Constant
 
 class Optimizer:
     def __init__(self, lr=0.01):
         if isinstance(lr, (float, int)):
-            lr = constant(lr)
+            lr = Constant(lr)
         self.lr = lr
         self.initialized = False
 
@@ -30,16 +30,16 @@ class GradientDescent(Optimizer):
 
 
 class Momentum(Optimizer):
-    def __init__(self, lr=0.01, gamma=0.9):
+    def __init__(self, lr=0.01, momentum=0.9,):
         super().__init__(lr)
-        self.gamma = gamma
+        self.momentum = momentum
         
     def initialize(self, x_init):
         self.v = np.zeros_like(x_init)
         self.initialized = True
     
     def step(self, x, grad):
-        self.v = self.gamma * self.v + next(self.lr) * grad  # Is this right for v?
+        self.v = self.momentum * self.v + next(self.lr) * grad
         return x - self.v
 
       

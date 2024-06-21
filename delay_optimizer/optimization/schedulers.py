@@ -1,89 +1,83 @@
 import numpy as np
+import math
 
-def constant(learning_rate):
-    """Yields a given constant learning rate
-    """
-    while True: yield learning_rate   
-       
-       
-def step(max_lr, gamma, step_size):
-    """Decaying learning rate, decaying by a parameter every step_size steps (stairs)
-    """
-    i = 1
-    while True:
-        new_lr = max_lr * np.power(gamma, np.floor(i / step_size))
-        i += 1
-        yield new_lr
-       
-       
-def inv(max_lr, gamma, p):
-    """Decaying by an inverse parameter every step size (smooth decay)
-    """
-    i = 1
-    while True:
-        new_lr = max_lr * np.power(1 / (1 + i*gamma), p) 
-        i += 1
-        yield new_lr
+class Scheduler:
+    def __init__(self):
+        self._t = 0
+
+    def __iter__(self):
+        return self
+        
+    def __next__(self):
+        self._t += 1
+        return self.schedule(self._t)
+
+    def __getitem__(self, t):
+        return self.schedule(t)
+
+    def current(self):
+        return self.schedule(self._t)
+
+    def schedule(self, t):
+        raise NotImplementedError("Subclasses must implement this method")
+
+
+class Constant(Scheduler):
+    def __init__(self, lr):
+        super().__init__()
+        self.base_lr = lr
+
+    def schedule(self, t):
+        return self.base_lr
         
 
-def tri_2(max_lr, min_lr, step_size):
-    """Decaying triangle learning rate schedule"""
-    i = 1
-    while True:
-        val1 = i / (2 * step_size)
-        val2 = 2 / np.pi * np.abs(np.arcsin(np.sin(np.pi * val1)))
-        val3 = np.abs(max_lr - min_lr) / np.power(2, np.floor(val1)) 
-        new_lr = val2 * val3 + np.min((max_lr, min_lr))
+class Step(Scheduler):
+    def __init__(self, max_lr, gamma, step_size):
+        super().__init__()
+        self.base_lr = max_lr
+        self.gamma = gamma
+        self.step_size = step_size
         
-        i += 1
-        yield new_lr
+    def schedule(self, t):
+        return self.base_lr * (self.gamma ** (t // self.step_size))
     
-    
-def sin_2(max_lr, min_lr, step_size):
-    """Decaying sin learning rate schedule"""
-    i = 1
-    while True:
-        val1 = i / (2 * step_size)
-        val2 = np.abs(np.sin(np.pi * val1))
-        val3 = np.abs(max_lr - min_lr) / np.power(2, np.floor(val1))
-        new_lr = val2 * val3 + np.min((max_lr, min_lr))
-        
-        i += 1
-        yield new_lr
-       
-    
-def get_param_dict(lr_type):
-    if (lr_type == 'const'):
-        key_list = ['learning_rate']
-    elif (lr_type == 'step'):
-        key_list = ['max_lr', 'gamma', 'step_size'] 
-    elif (lr_type =='inv'):
-        key_list = ['max_lr', 'gamma', 'p']
-    elif (lr_type=='tri-2'):
-        key_list = ['max_lr', 'min_lr', 'step_size']
-    elif (lr_type=='sin-2'):
-        key_list = ['max_lr', 'min_lr', 'step_size']
-    else:
-        raise ValueError("Not a valid lr_type") 
-        
-    params = dict()
-    for key in key_list:
-        params[key] = None
-        
-    return params    
-        
-def generate_learning_rates(lr_type, **params):
-    """ Create the learning rate generator for constant and nonconstant learning rates
-    """
-    if (lr_type == 'const'):
-        return constant(**params)
-    elif (lr_type == 'step'):
-        return step(**params)
-    elif (lr_type == 'inv'):
-        return inv(**params)
-    elif (lr_type == 'tri-2'):
-        return tri_2(**params)
-    elif (lr_type == 'sin-2'):
-        return sin_2(**params)
-    else:
-        raise ValueError('{} is not a valid input for lr_type (type of learning rate to generate)'.format(lr_type))
+
+class Inv(Scheduler):
+    def __init__(self, max_lr, gamma, p):
+        super().__init__()
+        self.base_lr = max_lr
+        self.gamma = gamma
+        self.p = p
+
+    def schedule(self, t):
+        return self.base_lr * ((1 + t * self.gamma) ** -self.p)
+     
+
+class Tri2(Scheduler):
+    def __init__(self, max_lr, min_lr, step_size):
+        super().__init__()
+        max_lr, min_lr = max(max_lr, min_lr), min(max_lr, min_lr)
+        self.base_lr = max_lr
+        self.min_lr = min_lr
+        self.step_size = step_size
+        self._width = max_lr - min_lr
+
+    def schedule(self, t):
+        val1 = t / (2 * self.step_size)
+        val2 = 2 / math.pi * abs(math.asin(math.sin(math.pi * val1)))
+        return self.min_lr + val2 * (self._width / 2**math.floor(val1))     # TODO: This is not the same as before
+
+
+class Sin2(Scheduler):
+    def __init__(self, max_lr, min_lr, step_size):
+        super().__init__()
+        max_lr, min_lr = max(max_lr, min_lr), min(max_lr, min_lr)
+        self.base_lr = max_lr
+        self.min_lr = min_lr
+        self.step_size = step_size
+        self._width = max_lr - min_lr
+
+    def schedule(self, t):
+        val1 = t / (2 * self.step_size)
+        val2 = abs(math.sin(math.pi * val1))
+        return self.min_lr + val2 * (self._width / 2**math.floor(val1))     # TODO: This is not the same as before
