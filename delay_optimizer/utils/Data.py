@@ -1,122 +1,89 @@
 # Data.py
 
 import numpy as np
-from Optimizer_Scripts import DelayTypeGenerators
-from Optimizer_Scripts.LossFunc import LossFunc
 import pickle
 import blosc
+
+from .parse import (
+    parse_objective_function,
+    parse_optimizer,
+    parse_scheduler,
+    parse_delay_distribution
+)
 
 
 class Data:
     """Object to hold optimization data."""
     
-    def __init__(self, loss_func):
-        self.set_loss_function(loss_func)
-        
-        self.state_vals = []
-        self.loss_vals = []
-        self.grad_vals = []
-        self.converged = []
-        
-    
-    # Initialization -------------------------------------------------------
-    
-    def set_loss_function(self, loss_func):
-        """Set values from loss function object"""
-        self.loss_name = loss_func.loss_name
-        self.dim = loss_func.n
-        self.domain = loss_func.domain
-        self.minimizer = loss_func.minimizer 
-    
-    def set_delay_scheme(self, delay_type, maxiter, tol, break_opt):
-        """Set delay scheme values from DelayType object"""
+    def __init__(self, objective, optimizer, delay_type, maxiter):
+        # Set values from input objects
+        self.objective = objective.__class__.__name__.lower()
+        self.objective_params = {k:v for k,v in objective.__dict__.items() if k != 'minimizer'}
+
+        self.optimizer = optimizer.__class__.__name__.lower()
+        self.optimizer_params = {k:v for k,v in optimizer.__dict__.items() if k not in {'lr','initialized'}}
+
+        self.scheduler = optimizer.lr.__class__.__name__.lower()
+        self.scheduler_params = optimizer.lr.get_params()
+
+        self.delay_type = delay_type.__class__.__name__.lower()
         self.delay_params = delay_type.__dict__
+
         self.maxiter = maxiter
-        self.tol = tol
-        self.break_opt = break_opt
-        
-    def set_optimizer_params(self, optimizer_name, lr_params):
-        """Set parameter values for the optimizer"""
-        self.optimizer_name = optimizer_name
-        self.lr_params = lr_params
-        
+        self.states = []    # Running state values (compressed to 2d when saved)
+        self.state_vals = None
+        self.loss_vals = None
     
+
     # Optimization ---------------------------------------------------------
-    
-    def add_point(self, result, save_state, save_loss, save_grad):
-        """Append the values for the delayed optimization of a single point"""
-        if save_state is not False:
-            self.state_vals.append(result.state_vals)
-        if save_loss is True:
-            self.loss_vals.append(result.loss_vals)
-        if save_grad is True:
-            self.grad_vals.append(result.grad_vals)
-            
-        self.converged.append(result.converged)
-        
+
+    def update(self, X):
+        self.states.append(X)
+        if (len(self.states)+1) * X.size > 1e8:
+            self.condense()
 
     # Data retrieval -------------------------------------------------------
     
-    def get_loss_function(self):
-        loss_func = LossFunc(self.loss_name, self.dim)
-        loss_func.domain = self.domain
-        loss_func.minimizer = self.minimizer
-        return loss_func
+    def get_objective(self):
+        return parse_objective_function(self.objective, **self.objective_params)
+
+    def get_optimizer(self):
+        lr = parse_scheduler(self.scheduler, **self.scheduler_params)
+        return parse_optimizer(self.optimizer, lr=lr, **self.optimizer_params)
     
     def get_delay_type(self):
-        return DelayTypeGenerators.get_delay_type(self.delay_params)  
-    
-    def get_initials(self, value_list):
-        """Returns an array of initial values from the given list of sequences"""
-        return np.asarray([val[0] for val in value_list])
-    
-    def get_x_inits(self):
-        return self.get_initials(self.state_vals)
-    
-    def get_finals(self, value_list):
-        """Returns an array of final values from the given list of sequences"""
-        return np.asarray([val[-1] for val in value_list])
-    
-    def get_mean_final(self, value_list):
-        """Returns the final mean value of the given list of sequences"""
-        return np.mean(self.get_finals(value_list), axis=0)
-    
-    def get_slice(self, dim_tuple):
-        """Returns the desired slice of the state data. 
-        
-        Parameters:
-            dim_tuple (tuple): The dimensions to extract
-        Returns:
-            (ndarray(list(ndarray))): Ragged nested array of sliced state 
-                sequences
-        """
-        return np.array([np.array([it[np.r_[dim_tuple]] for it in point]) 
-                         for point in self.state_vals], dtype=object)
-    
-    def get_loss_array(self):
-        """Returns the full, nonragged 2d array of loss values. Array has 
-        dimensions (num_points, maxiter+1) 
-        """
-        loss_arr = np.empty([len(self.loss_vals), self.maxiter+1])
-        for j, loss_vals in enumerate(self.loss_vals):
-            loss_arr[j][:len(loss_vals)] = loss_vals
-            loss_arr[j][len(loss_vals):] = loss_vals[-1]
-        
-        return loss_arr    
-        
+        return parse_delay_distribution(self.delay_type, **self.delay_params) 
+
     
     # Saving / Loading -----------------------------------------------------
     
-    def close(self):
-        """Reduce memory size of lists for storage"""
-        self.state_vals = self.state_vals[:]
-        self.loss_vals = self.loss_vals[:]
-        self.grad_vals = self.grad_vals[:]
-        self.converged = self.converged[:]
+    def condense(self):
+        """Computes the loss values and purges the running state values, saving only 
+        the first two dimensions for plotting data.
+
+        This method is called when the number of state values is too large or when 
+        data is being saved to a file.
+        """
+        if len(self.states) == 0:   # No data to condense
+            return
+
+        X = np.array(self.states)
+        state_vals = X[...,:2]
+        loss_vals = self.get_objective().loss(X.reshape(-1, X.shape[-1])).reshape(*X.shape[:-1])
+
+        if self.state_vals is None:
+            self.state_vals = state_vals.astype(np.float32)
+            self.loss_vals = loss_vals.astype(np.float32)
+        else:
+            self.state_vals = np.concatenate((self.state_vals, state_vals), axis=0)
+            self.loss_vals = np.concatenate((self.loss_vals, loss_vals), axis=0)
+
+        self.states = []
         
     def save(self, filename): 
         """Save data to given file"""
-        self.close()
+        self.condense()
+        del self.states     # Don't save empty array
         
         if not filename.endswith('.dat'):   # Format filename
             filename += '.dat'

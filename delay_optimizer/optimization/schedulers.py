@@ -25,59 +25,72 @@ class Scheduler:
 class Constant(Scheduler):
     def __init__(self, lr):
         super().__init__()
-        self.base_lr = lr
+        self.lr = lr
 
     def schedule(self, t):
-        return self.base_lr
+        return self.lr
+
+    def get_params(self):
+        return {"lr": self.lr}
         
 
 class Step(Scheduler):
     def __init__(self, max_lr, gamma, step_size):
         super().__init__()
-        self.base_lr = max_lr
+        self.max_lr = max_lr
         self.gamma = gamma
         self.step_size = step_size
         
     def schedule(self, t):
-        return self.base_lr * (self.gamma ** (t // self.step_size))
+        return self.max_lr * (self.gamma ** (t // self.step_size))
+
+    def get_params(self):
+        return {"max_lr": self.max_lr, "gamma": self.gamma, "step_size": self.step_size}
     
 
 class Inv(Scheduler):
     def __init__(self, max_lr, gamma, p):
         super().__init__()
-        self.base_lr = max_lr
+        self.max_lr = max_lr
         self.gamma = gamma
         self.p = p
 
     def schedule(self, t):
-        return self.base_lr * ((1 + t * self.gamma) ** -self.p)
+        return self.max_lr * ((1 + t * self.gamma) ** -self.p)
+
+    def get_params(self):
+        return {"max_lr": self.max_lr, "gamma": self.gamma, "p": self.p}
      
 
 class Tri2(Scheduler):
     def __init__(self, max_lr, min_lr, step_size):
         super().__init__()
-        max_lr, min_lr = max(max_lr, min_lr), min(max_lr, min_lr)
-        self.base_lr = max_lr
-        self.min_lr = min_lr
+        self.max_lr = max(max_lr, min_lr)
+        self.min_lr = min(max_lr, min_lr)
         self.step_size = step_size
-        self._width = max_lr - min_lr
+        self._width = self.max_lr - self.min_lr
 
     def schedule(self, t):
         val1 = t / (2 * self.step_size)
         val2 = 2 / math.pi * abs(math.asin(math.sin(math.pi * val1)))
-        return self.min_lr + val2 * (self._width / 2**math.floor(val1))     # TODO: This is not the same as before
+        return self.min_lr + val2 * (self._width / 2**math.floor(val1))
+
+    def get_params(self):
+        return {"max_lr": self.max_lr, "min_lr": self.min_lr, "step_size": self.step_size}
 
 
 class Sin2(Scheduler):
     def __init__(self, max_lr, min_lr, step_size):
         super().__init__()
-        max_lr, min_lr = max(max_lr, min_lr), min(max_lr, min_lr)
-        self.base_lr = max_lr
-        self.min_lr = min_lr
+        self.max_lr = max(max_lr, min_lr)
+        self.min_lr = min(max_lr, min_lr)
         self.step_size = step_size
-        self._width = max_lr - min_lr
+        self._width = self.max_lr - self.min_lr
 
     def schedule(self, t):
         val1 = t / (2 * self.step_size)
         val2 = abs(math.sin(math.pi * val1))
-        return self.min_lr + val2 * (self._width / 2**math.floor(val1))     # TODO: This is not the same as before
+        return self.min_lr + val2 * (self._width / 2**math.floor(val1))
+
+    def get_params(self):
+        return {"max_lr": self.max_lr, "min_lr": self.min_lr, "step_size": self.step_size}

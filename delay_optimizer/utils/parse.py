@@ -30,7 +30,7 @@ def parse_kwargs(kwargs):
             raise ValueError(f"Could not parse key: {k}")
     return objective_kwargs, scheduler_kwargs, optimizer_kwargs, delay_kwargs
 
-def parse_objective_function(self, objective, **kwargs):
+def parse_objective_function(objective, **kwargs):
     match objective:
         case functions.ObjectiveFunction:
             return objective
@@ -49,7 +49,7 @@ def parse_objective_function(self, objective, **kwargs):
         case _:
             raise ValueError("Invalid input for objective function.")
 
-def parse_scheduler(self, scheduler, **kwargs):
+def parse_scheduler(scheduler, **kwargs):
     match scheduler:
         case schedulers.Scheduler:
             return scheduler
@@ -70,7 +70,7 @@ def parse_scheduler(self, scheduler, **kwargs):
         case _:
             raise ValueError("Invalid input for learning rate scheduler.")
 
-def parse_optimizer(self, optimizer, **kwargs):
+def parse_optimizer(optimizer, **kwargs):
     match optimizer:
         case optimizers.Optimizer:
             return optimizer
@@ -87,7 +87,7 @@ def parse_optimizer(self, optimizer, **kwargs):
         case _:
             raise ValueError("Invalid input for optimizer.")
 
-def parse_delay_distribution(self, delays, **kwargs):
+def parse_delay_distribution(delays, **kwargs):
     match delays:
         case distributions.DelayType:
             return delays
