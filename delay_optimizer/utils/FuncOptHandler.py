@@ -1,4 +1,4 @@
-# FuncOptHandler.py 
+# optimization_helper.py 
 
 import numpy as np
 import warnings
@@ -13,8 +13,9 @@ from .parse import (
     parse_optimizer,
     parse_delay_distribution
 )
+from .data import Data
 
-class Handler:
+class OptimizationHelper:
     """Class for handling delayed or undelayed optimization on a given function"""
     def __init__(self, objective, **kwargs):
         """Initializer for the Handler class
@@ -46,14 +47,14 @@ class Handler:
 
     # Run optimization ------------------------------------------------------
    
-    def optimize(self, optimizer, delays, scheduler="constant", maxiter=5000, 
-                 save_state=(0,1), save_loss=True, save_grad=False, **kwargs):      # TODO: TEST THIS
+    def optimize(self, optimizer, delay_type, scheduler, maxiter=5000, output_dir=None, 
+                 **kwargs):
         """Run the optimization on the initial points already initialized and 
         saves values to be plotted.
         
         Parameters:
             optimizer(Optimizer,str): the base optimizer
-            delays(DelayType,str): the delay distribution to apply during optimization
+            delay_type(DelayType,str): the delay distribution to apply during optimization
             scheduler(Scheduler,str): the learning rate scheduler to use
             maxiter(int): the maximum number of iterations for optimization
             save_state(bool/tuple): state dimensions to save during optimization
@@ -69,12 +70,10 @@ class Handler:
         scheduler_kwargs, optimizer_kwargs, delay_kwargs = parse_kwargs(kwargs)
         scheduler = parse_scheduler(scheduler, **scheduler_kwargs)
         optimizer = parse_optimizer(optimizer, lr=scheduler, **optimizer_kwargs)
-        delays = parse_delay_distribution(delays, **delay_kwargs)
-        delayer = DelayedOptimizer(self.objective, optimizer, delays)
+        delay_type = parse_delay_distribution(delay_type, **delay_kwargs)
+        delayer = DelayedOptimizer(self.objective, optimizer, delay_type)
 
-        # self.data.set_delay_scheme(delay_type, maxiter, tol, break_opt)
-        # self.data.set_optimizer_params(optimizer_name, lr_params)
-            
+        data = Data(objective, optimizer, delay_type, maxiter)
         pbar = tqdm(
             total=maxiter,
             desc=r"{} {}d ({})".format(self.objective.__class__.__name__, 
@@ -82,49 +81,13 @@ class Handler:
                                         delay_type.__class__.__name__), 
             leave=True
         )
-        self.initialize(x_init)
+        delayer.initialize(self.x_inits)
         for i in pbar:
             delayer.step()
+            data.update(delayer.time_series[0])
             pbar.update()
+
+        if output_dir is not None:
+            data.save(output_dir)
             
-        return
-
-
-    # Save and load data ----------------------------------------------------
-
-    def save_data(self, filename):
-        self.data.save(filename)
-        
-    def load_data(self, filename):
-        data = Data.load(filename)
-        if (self.objective != data.get_loss_function()):
-            raise ValueError("Functions do not match. Data was not loaded.")
-        self.data = data
-        
-    @classmethod
-    def load(cls, filename):
-        """Load Handler object from Data class file"""
-        data = Data.load(filename)
-        obj = cls(data.loss_name, data.dim)
-        obj.x_inits = data.get_x_inits()
-        obj.data = data
-        return obj
-    
-
-    # Data management -----------------------------------------------------
-    
-    def delete_initials(self):
-        """Deletes all initialized points"""
-        del self.x_inits
-            
-    def delete_data(self):
-        """Deletes all optimization data but retains initial values"""
-        del self.data
-        
-    def reset(self):
-        """Resets all values (except loss function)"""
-        self.delete_initials()
-        self.delete_data()
-        
-    
-        
+        return data
