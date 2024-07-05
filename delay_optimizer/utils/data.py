@@ -30,7 +30,7 @@ class Data:
         self.delay_params = delay_type.__dict__
 
         self.maxiter = maxiter
-        self.states = []    # Running state values (compressed to 2d when saved)
+        self._states = []    # Running state values (compressed to 2d when saved)
         self.state_vals = None
         self.loss_vals = None
     
@@ -38,8 +38,8 @@ class Data:
     # Optimization ---------------------------------------------------------
 
     def update(self, X):
-        self.states.append(X)
-        if (len(self.states)+1) * X.size > 1e8:
+        self._states.append(X)
+        if (len(self._states)+1) * X.size > 1e8:
             self.condense()
 
     # Data retrieval -------------------------------------------------------
@@ -64,10 +64,10 @@ class Data:
         This method is called when the number of state values is too large or when 
         data is being saved to a file.
         """
-        if len(self.states) == 0:   # No data to condense
+        if len(self._states) == 0:   # No data to condense
             return
 
-        X = np.array(self.states)
+        X = np.array(self._states)
         state_vals = X[...,:2]
         loss_vals = self.get_objective().loss(X.reshape(-1, X.shape[-1])).reshape(*X.shape[:-1])
 
@@ -78,12 +78,12 @@ class Data:
             self.state_vals = np.concatenate((self.state_vals, state_vals), axis=0)
             self.loss_vals = np.concatenate((self.loss_vals, loss_vals), axis=0)
 
-        self.states = []
+        self._states = []
         
     def save(self, filename): 
         """Save data to given file"""
         self.condense()
-        del self.states     # Don't save empty array
+        del self._states     # Don't save empty array
         
         if not filename.endswith('.dat'):   # Format filename
             filename += '.dat'

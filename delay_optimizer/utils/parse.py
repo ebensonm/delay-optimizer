@@ -28,7 +28,7 @@ def parse_kwargs(kwargs):
             delay_kwargs[k] = v
         else:
             raise ValueError(f"Could not parse key: {k}")
-    return objective_kwargs, scheduler_kwargs, optimizer_kwargs, delay_kwargs
+    return optimizer_kwargs, delay_kwargs, scheduler_kwargs
 
 def parse_objective_function(objective, **kwargs):
     match objective:
@@ -94,7 +94,7 @@ def parse_delay_distribution(delays, **kwargs):
         case str():
             delays = delays.lower()
             if delays == "undelayed":
-                return distributions.Undelayed(**kwargs)
+                return distributions.Undelayed()
             elif delays == "uniform":
                 return distributions.Uniform(**kwargs)
             elif delays == "stochastic":

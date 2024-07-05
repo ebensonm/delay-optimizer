@@ -2,12 +2,12 @@
 
 import numpy as np
 import warnings
-from Optimizer_Scripts.Data import Data
 from tqdm import tqdm
 
 from ..optimization import functions, optimizers, schedulers
 from ..delays import DelayedOptimizer, distributions
 from .parse import (
+    parse_kwargs,
     parse_objective_function,
     parse_scheduler,
     parse_optimizer,
@@ -47,8 +47,8 @@ class OptimizationHelper:
 
     # Run optimization ------------------------------------------------------
    
-    def optimize(self, optimizer, delay_type, scheduler, maxiter=5000, output_dir=None, 
-                 **kwargs):
+    def optimize(self, optimizer, delay_type, scheduler="constant", maxiter=5000, 
+                 output_dir=None, **kwargs):
         """Run the optimization on the initial points already initialized and 
         saves values to be plotted.
         
@@ -67,27 +67,30 @@ class OptimizationHelper:
             return
         
         # Initialize
-        scheduler_kwargs, optimizer_kwargs, delay_kwargs = parse_kwargs(kwargs)
+        optimizer_kwargs, delay_kwargs, scheduler_kwargs = parse_kwargs(kwargs)
         scheduler = parse_scheduler(scheduler, **scheduler_kwargs)
         optimizer = parse_optimizer(optimizer, lr=scheduler, **optimizer_kwargs)
         delay_type = parse_delay_distribution(delay_type, **delay_kwargs)
         delayer = DelayedOptimizer(self.objective, optimizer, delay_type)
 
-        data = Data(objective, optimizer, delay_type, maxiter)
+        # Run optimization
+        data = Data(self.objective, optimizer, delay_type, maxiter)
         pbar = tqdm(
-            total=maxiter,
+            range(maxiter),
             desc=r"{} {}d ({})".format(self.objective.__class__.__name__, 
                                         self.objective.n,
-                                        delay_type.__class__.__name__), 
+                                        delay_type.__class__.__name__),
             leave=True
         )
         delayer.initialize(self.x_inits)
         for i in pbar:
             delayer.step()
             data.update(delayer.time_series[0])
-            pbar.update()
 
         if output_dir is not None:
             data.save(output_dir)
+        else:
+            data.condense()
+            del data._states
             
         return data
