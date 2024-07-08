@@ -17,8 +17,7 @@ class Data:
     
     def __init__(self, objective, optimizer, delay_type, maxiter):
         # Set values from input objects
-        self.objective = objective.__class__.__name__.lower()
-        self.objective_params = {k:v for k,v in objective.__dict__.items() if k != 'minimizer'}
+        self.objective = objective
 
         self.optimizer = optimizer.__class__.__name__.lower()
         self.optimizer_params = {k:v for k,v in optimizer.__dict__.items() if k not in {'lr','initialized'}}
@@ -69,7 +68,7 @@ class Data:
 
         X = np.array(self._states)
         state_vals = X[...,:2]
-        loss_vals = self.get_objective().loss(X.reshape(-1, X.shape[-1])).reshape(*X.shape[:-1])
+        loss_vals = self.objective.loss(X.reshape(-1, X.shape[-1])).reshape(*X.shape[:-1])
 
         if self.state_vals is None:
             self.state_vals = state_vals.astype(np.float32)
@@ -84,6 +83,10 @@ class Data:
         """Save data to given file"""
         self.condense()
         del self._states     # Don't save empty array
+
+        # Parse objective function
+        self.objective_params = {k:v for k,v in self.objective.__dict__.items() if k != 'minimizer'}
+        self.objective = self.objective.__class__.__name__.lower()
         
         if not filename.endswith('.dat'):   # Format filename
             filename += '.dat'
