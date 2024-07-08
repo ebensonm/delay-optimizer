@@ -1,17 +1,5 @@
-# For the algorithm
 numpy
-pandas
-scipy
-scikit-learn
-ray
-argparse
-
-# For testing / examples
-blosc
-pathos
-tqdm
 matplotlib
+blosc
+tqdm
 
-# Not working in Python 3.10
-#GPy
-#GPyOpt
