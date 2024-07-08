@@ -47,11 +47,14 @@ class Data:
         return parse_objective_function(self.objective, **self.objective_params)
 
     def get_optimizer(self):
-        lr = parse_scheduler(self.scheduler, **self.scheduler_params)
+        lr = self.get_scheduler()
         return parse_optimizer(self.optimizer, lr=lr, **self.optimizer_params)
     
     def get_delay_type(self):
         return parse_delay_distribution(self.delay_type, **self.delay_params) 
+
+    def get_scheduler(self):
+        return parse_scheduler(self.scheduler, **self.scheduler_params)
 
     
     # Saving / Loading -----------------------------------------------------
@@ -81,12 +84,14 @@ class Data:
         
     def save(self, filename): 
         """Save data to given file"""
-        self.condense()
-        del self._states     # Don't save empty array
+        if "_states" in self.__dict__:
+            self.condense()         # Condense before saving
+            del self._states
 
         # Parse objective function
-        self.objective_params = {k:v for k,v in self.objective.__dict__.items() if k != 'minimizer'}
-        self.objective = self.objective.__class__.__name__.lower()
+        if not isinstance(self.objective, str):
+            self.objective_params = {k:v for k,v in self.objective.__dict__.items() if k != 'minimizer'}
+            self.objective = self.objective.__class__.__name__.lower()
         
         if not filename.endswith('.dat'):   # Format filename
             filename += '.dat'
