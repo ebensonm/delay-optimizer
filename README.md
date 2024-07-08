@@ -1,13 +1,10 @@
-# delay-optimizer
-This project deals with adding time delays to an optimizer given some cost function and its gradient.
-With much experimentation and analysis we have discovered interesting results in many different forms of cost functions.
-This method, with some editing can be applied to Machine Learning and Deep Learning Models.
-The different available optimizers are in Optimizer_Scripts/optimizers.py.
-The delayer is found in Optimizer_Scripts/Delayer.py
-hyperparameter_optimization.py is used for finding optimal hyperparameters for the Rastrigin or Ackley functions.
+# Improving Optimization using Time Delays
+This project deals with adding time delays to a variety of gradient-based optimization methods, given some objective function and its gradient.
+Through experimentation, we have discovered that introducing certain time delays into optimization algorithms, especially the Adam optimizer, have the potential to significantly improve the performance of the optimizer. 
+Perhaps more surprising is that this improvement often scales with dimension, resulting in better performance relative to the undelayed optimizer under high-dimensional objective functions.
+Furthermore, this algorithm does not affect the leading-order computational complexity of the optimization method, and the spatial complexity scales linearly with the length of the largest time delay.
 
-## Adding time delays to an optimizer
-You can use a generic cost function and optimizer using time delays by passing the function, its gradient, the type of optimizer to delay, and additional hyperparameters to the Delayer class found in Optimizer_Scripts/Delayer.py.
-Then call Delayer.compute_time_series() with the relevant hyperparameters.
-Understanding how time delays affect and sometimes improve the optimization process with the Adam Optimizer has already allowed us to improve on optimization test functions found on wikipedia.com.
-unit_test.py is outdated.
+## Using the time-delayed optimizer
+To use the time-delayed optimizer with pre-defined functions, optimizers, and delay types, you can utilize the `OptimizationHelper` class, which allows the user to automatically run optimization, and access optimization data. An example of how to use this class is shown in the `demo.ipynb` notebook.
+
+To instead define your own objective function or optimizer, you can use the `DelayedOptimizer` class, passing in an objective function, optimizer, and delay distribution to use in optimization. This allows the user to manually handle their use case, including control over the optimization loop itself. An example of how to use this class is also shown in the `demo.ipynb` notebook.
