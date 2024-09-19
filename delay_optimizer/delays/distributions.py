@@ -41,11 +41,12 @@ class DiscreteDelay(DelayDistribution):
             torch.tensor: Delayed parameter state
             torch.tensor: Updated parameter history
         """
-        full_param_state = torch.cat([param.clone().detach().unsqueeze(0), param_history], dim=0)
-        if iteration_num >= self.num_delays:    # No delays applied after num_delays iterations
+        full_param_state = torch.cat([param.detach().unsqueeze(0), param_history], dim=0)
+        if iteration_num >= self.num_delays:    # TODO: Consider using dynamic max_L and param_history
             return param, full_param_state[:-1]
         D = self.sample(param.size(), iteration_num)
-        return full_param_state.gather(0, D.unsqueeze(0)).squeeze(0), full_param_state[:-1]
+        delayed_param = full_param_state.gather(0, D.unsqueeze(0)).squeeze(0)
+        return delayed_param, full_param_state[:-1]
 
 
 class ParallelDiscreteDelay(DiscreteDelay):
@@ -64,14 +65,11 @@ class ParallelDiscreteDelay(DiscreteDelay):
         return torch.full(size, L, dtype=torch.int)
 
     def __call__(self, param, param_history, iteration_num):
-        full_param_state = torch.cat([param.clone().detach().unsqueeze(0), param_history], dim=0)
-        if iteration_num < self.num_delays:
-            L = self.get_delay(iteration_num)
-            if L < 0:
-                raise ValueError(f"Delay length cannot be negative. Got value {L}")
-            elif L > 0:
-                return full_param_state[L], full_param_state[:-1]
-        return param, full_param_state[:-1]
+        full_param_state = torch.cat([param.detach().unsqueeze(0), param_history], dim=0)
+        L = self.get_delay(iteration_num) if iteration_num < self.num_delays else 0
+        if L < 0:
+            raise ValueError(f"Delay length cannot be negative. Got value {L}")
+        return full_param_state[L], full_param_state[:-1]
 
         
 class Undelayed(ParallelDiscreteDelay):

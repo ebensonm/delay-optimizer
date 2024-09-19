@@ -34,10 +34,10 @@ class DelayedOptimizer(Optimizer):
         self._optimizer = optimizer_class(params, **optimizer_kwargs)
         self._optimizer.defaults['delay'] = delay
         self._optimizer.defaults['max_L'] = max_L
-        if init_history is None:
+        if initial_history is None:
             self._optimizer.defaults['init_history'] = self._init_param_history
         else:
-            self._optimizer.defaults['init_history'] = init_history
+            self._optimizer.defaults['init_history'] = initial_history
         
         self._init_delayed_param_groups()
     
@@ -89,9 +89,9 @@ class DelayedOptimizer(Optimizer):
 
             param_group["max_L"] = L
             param_group["delay"] = delay
-            init_history = param_group.get("init_history", 
+            initial_history = param_group.get("init_history", 
                                 self._optimizer.defaults["init_history"])
-            init_history(param_group)
+            initial_history(param_group)
 
             # Check the size of the delay history
             for i in range(len(params)):
@@ -120,6 +120,7 @@ class DelayedOptimizer(Optimizer):
         This function should be called before the forward pass through the model 
         in order to compute the correct gradient and loss values.
         """
+        # TODO: Implement parallelization for applying delays
         for group in self.param_groups:
             if group["max_L"] == 0:     # No delays, no history to update
                 continue
@@ -129,14 +130,14 @@ class DelayedOptimizer(Optimizer):
                     "step", 
                     torch.tensor(0.0, dtype=_get_scalar_dtype())
                 )
-                delayed_param, updated_history = group["delay"](
-                    param, 
-                    param_history, 
-                    iteration_num
-                )
-                with torch.no_grad():   
-                    param.data.copy_(delayed_param)
-                    param_history.data.copy_(updated_history)
+                with torch.no_grad(): 
+                    delayed_param, updated_history = group["delay"](
+                        param, 
+                        param_history, 
+                        iteration_num
+                    )
+                    param.copy_(delayed_param)
+                    param_history.copy_(updated_history)
 
     def step(self, closure=None):
         return self._optimizer.step(closure)
